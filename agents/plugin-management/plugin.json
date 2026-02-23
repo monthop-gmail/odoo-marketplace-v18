@@ -1,0 +1,6 @@
+{
+  "name": "plugin-management",
+  "version": "1.0.0",
+  "description": "Plugin lifecycle — create new plugins, customize existing ones, and manage the plugin ecosystem.",
+  "author": { "name": "SiamCivilize" }
+}

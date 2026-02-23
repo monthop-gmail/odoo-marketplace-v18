@@ -1,0 +1,6 @@
+{
+  "name": "finance",
+  "version": "1.0.0",
+  "description": "Financial settlement — commission calculation, seller wallet, withdrawal processing, accounting entries, and revenue reporting.",
+  "author": { "name": "SiamCivilize" }
+}

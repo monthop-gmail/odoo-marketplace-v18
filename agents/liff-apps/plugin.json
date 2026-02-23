@@ -1,0 +1,6 @@
+{
+  "name": "liff-apps",
+  "version": "1.0.0",
+  "description": "LIFF Mini App frontends — buyer, seller, admin, promotion, support apps with REST API, mobile-first UX, and Thai localization.",
+  "author": { "name": "SiamCivilize" }
+}

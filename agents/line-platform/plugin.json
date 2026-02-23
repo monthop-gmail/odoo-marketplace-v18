@@ -1,0 +1,6 @@
+{
+  "name": "line-platform",
+  "version": "1.0.0",
+  "description": "LINE OA integration — channels, webhook events, messaging API, rich menus, user identity mapping, and notification triggers.",
+  "author": { "name": "SiamCivilize" }
+}

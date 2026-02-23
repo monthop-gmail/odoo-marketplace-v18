@@ -92,33 +92,31 @@ module_name/
 - Response format: JSON with `success`, `data`, `error` fields
 - HTTP methods: GET (read), POST (create/action), PUT (update), DELETE (remove)
 
-## Agent Architecture (Plugin Pattern)
+## Agent Architecture (11 Plugins)
 
-Structure follows [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) pattern:
+Structure follows [anthropics/knowledge-work-plugins](https://github.com/anthropics/knowledge-work-plugins) pattern with 11 specialized plugins:
 
 ```
 agents/
-├── plugin.json                          # Manifest
-├── CONNECTORS.md                        # ~~category → concrete tool mapping
-├── skills/                              # Auto-activated domain knowledge
-│   ├── product-admin/SKILL.md           # Master agent (architecture, security, coordination)
-│   ├── seller-engine/SKILL.md           # Seller lifecycle, shops, reviews
-│   ├── commerce/SKILL.md               # Products, orders, stock, pricing
-│   ├── commission-wallet/SKILL.md       # Commission, payments, wallet
-│   ├── line-integration/SKILL.md        # LINE OA, webhook, messaging
-│   └── liff-frontend/SKILL.md           # LIFF apps, REST API, UI/UX
-└── commands/                            # Explicit slash commands
-    ├── approve-seller.md                # /approve-seller
-    ├── review-product.md                # /review-product
-    ├── check-commission.md              # /check-commission
-    ├── deploy-richmenu.md               # /deploy-richmenu
-    ├── system-status.md                 # /system-status
-    └── quick-post.md                    # /quick-post
+├── marketplace.json                     # Root manifest (lists all 11 plugins)
+├── seller-engine/                       # Seller lifecycle, shops, staff, reviews (6 skills, 3 commands)
+├── commerce/                            # Products, orders, stock, pricing (6 skills, 5 commands)
+├── finance/                             # Commission, wallet, withdrawal (5 skills, 3 commands)
+├── line-platform/                       # LINE OA, webhook, messaging, rich menu (6 skills, 3 commands)
+├── liff-apps/                           # 5 LIFF frontends, REST API, mobile UX (6 skills, 3 commands)
+├── marketing/                           # Promotions, campaigns, content (6 skills, 3 commands)
+├── customer-support/                    # Tickets, FAQ, escalation (5 skills, 5 commands)
+├── data/                                # Analytics, reporting, dashboards (7 skills, 5 commands)
+├── productivity/                        # Platform admin, tasks, memory (4 skills, 3 commands)
+├── enterprise-search/                   # Cross-platform search (4 skills, 2 commands)
+└── plugin-management/                   # Create/customize plugins (2 skills, 2 commands)
 ```
 
-- **Skills**: YAML frontmatter with trigger description, auto-activated when relevant
-- **Commands**: Explicit workflows with standalone/supercharged duality
-- **Connectors**: Abstract `~~category` placeholders (e.g., `~~marketplace-engine`, `~~messaging`)
+Each plugin contains: `plugin.json` + `CONNECTORS.md` + `skills/*/SKILL.md` + `commands/*.md`
+
+- **Skills**: YAML frontmatter with trigger description, auto-activated when relevant (57 total)
+- **Commands**: Explicit workflows with standalone/supercharged duality (37 total)
+- **Connectors**: Abstract `~~category` placeholders scoped per plugin
 
 ## Phase Roadmap
 - **Phase 1:** Buyer + Seller basic marketplace (current)

@@ -1,0 +1,6 @@
+{
+  "name": "customer-support",
+  "version": "1.0.0",
+  "description": "Customer support operations — ticket triage, response drafting, escalation workflows, knowledge base, and buyer research.",
+  "author": { "name": "SiamCivilize" }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "commerce",
+  "version": "1.0.0",
+  "description": "Product and order lifecycle — creation, approval, pricing, cart, checkout, stock management, and delivery tracking.",
+  "author": { "name": "SiamCivilize" }
+}

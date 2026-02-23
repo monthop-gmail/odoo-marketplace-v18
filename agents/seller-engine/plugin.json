@@ -1,0 +1,6 @@
+{
+  "name": "seller-engine",
+  "version": "1.0.0",
+  "description": "Seller lifecycle management — registration, approval, shops, staff, reviews, onboarding, and seller analytics dashboard.",
+  "author": { "name": "SiamCivilize" }
+}

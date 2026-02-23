@@ -1,0 +1,65 @@
+{
+  "name": "social-driven-marketplace",
+  "version": "2.0.0",
+  "description": "Social-Driven Community Marketplace — multi-vendor engine powered by LINE OA + LIFF + Odoo 18. 11 specialized plugins covering seller management, commerce, finance, LINE integration, LIFF apps, marketing, customer support, analytics, productivity, search, and plugin management.",
+  "author": {
+    "name": "SiamCivilize"
+  },
+  "plugins": [
+    {
+      "id": "seller-engine",
+      "path": "seller-engine/",
+      "description": "Seller lifecycle, shops, staff, reviews, onboarding"
+    },
+    {
+      "id": "commerce",
+      "path": "commerce/",
+      "description": "Products, orders, stock, pricing, delivery"
+    },
+    {
+      "id": "finance",
+      "path": "finance/",
+      "description": "Commission, wallet, withdrawal, accounting"
+    },
+    {
+      "id": "line-platform",
+      "path": "line-platform/",
+      "description": "LINE OA, webhook, messaging, rich menu, identity"
+    },
+    {
+      "id": "liff-apps",
+      "path": "liff-apps/",
+      "description": "5 LIFF frontends, REST API, mobile UX"
+    },
+    {
+      "id": "marketing",
+      "path": "marketing/",
+      "description": "Promotions, campaigns, discounts, content"
+    },
+    {
+      "id": "customer-support",
+      "path": "customer-support/",
+      "description": "Tickets, FAQ, escalation, knowledge base"
+    },
+    {
+      "id": "data",
+      "path": "data/",
+      "description": "Analytics, reporting, dashboards, SQL"
+    },
+    {
+      "id": "productivity",
+      "path": "productivity/",
+      "description": "Platform admin, task management, daily ops"
+    },
+    {
+      "id": "enterprise-search",
+      "path": "enterprise-search/",
+      "description": "Cross-platform marketplace search"
+    },
+    {
+      "id": "plugin-management",
+      "path": "plugin-management/",
+      "description": "Create, customize, and manage plugins"
+    }
+  ]
+}

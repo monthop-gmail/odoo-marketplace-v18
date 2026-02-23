@@ -1,8 +1,0 @@
-{
-  "name": "marketplace-platform",
-  "version": "1.0.0",
-  "description": "Social-Driven Community Marketplace — multi-vendor engine powered by LINE OA + LIFF + Odoo 18. Manages seller lifecycle, products, orders, commission, wallet, and LINE integration.",
-  "author": {
-    "name": "SiamCivilize"
-  }
-}
