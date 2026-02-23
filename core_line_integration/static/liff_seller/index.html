@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Seller Dashboard - LINE LIFF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Sarabun', sans-serif; }
+        .line-green { background-color: #00B900; }
+        .line-green-text { color: #00B900; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .modal-overlay { background: rgba(0,0,0,0.5); }
+        /* Quick Post */
+        .quickpost-preview { width: 100%; height: 100%; object-fit: cover; }
+        .quickpost-fab { position: fixed; bottom: 5rem; right: 1rem; z-index: 35; width: 56px; height: 56px; border-radius: 50%; background: #00B900; color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,185,0,0.4); }
+        .quickpost-optional.collapsed { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden pb-20">
+        <!-- Header -->
+        <header class="line-green text-white p-4 sticky top-0 z-40 shadow-md">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <img id="sellerAvatar" src="" alt="Seller" class="w-10 h-10 rounded-full border-2 border-white">
+                    <div>
+                        <p class="font-semibold" id="sellerName">Seller Dashboard</p>
+                        <p class="text-xs opacity-80">Marketplace Seller</p>
+                    </div>
+                </div>
+                <button onclick="showNotifications()" class="relative">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="page p-4">
+            <h2 class="text-lg font-semibold mb-4">Dashboard Overview</h2>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="stat-card bg-white rounded-xl p-4 shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Today's Orders</p>
+                            <p class="text-2xl font-bold text-blue-600" id="stat-orders-today">0</p>
+                        </div>
+                        <i class="fas fa-shopping-bag text-3xl text-blue-200"></i>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl p-4 shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Pending Ship</p>
+                            <p class="text-2xl font-bold text-orange-600" id="stat-pending">0</p>
+                        </div>
+                        <i class="fas fa-truck text-3xl text-orange-200"></i>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl p-4 shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Today's Revenue</p>
+                            <p class="text-2xl font-bold text-green-600" id="stat-revenue">฿0</p>
+                        </div>
+                        <i class="fas fa-coins text-3xl text-green-200"></i>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl p-4 shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Active Products</p>
+                            <p class="text-2xl font-bold text-purple-600" id="stat-products">0</p>
+                        </div>
+                        <i class="fas fa-box text-3xl text-purple-200"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <h3 class="text-md font-semibold mb-3">Quick Actions</h3>
+            <div class="grid grid-cols-4 gap-3 mb-6">
+                <button onclick="showPage('orders')" class="bg-white rounded-xl p-3 shadow text-center">
+                    <i class="fas fa-list-check text-xl text-blue-500 mb-1"></i>
+                    <p class="text-xs">Orders</p>
+                </button>
+                <button onclick="showPage('products')" class="bg-white rounded-xl p-3 shadow text-center">
+                    <i class="fas fa-box-open text-xl text-green-500 mb-1"></i>
+                    <p class="text-xs">Products</p>
+                </button>
+                <button onclick="SellerApp.startQuickPost()" class="bg-green-50 rounded-xl p-3 shadow text-center border-2 border-green-400">
+                    <i class="fas fa-camera text-xl text-green-600 mb-1"></i>
+                    <p class="text-xs font-semibold text-green-700">Quick Post</p>
+                </button>
+                <button onclick="showPage('reports')" class="bg-white rounded-xl p-3 shadow text-center">
+                    <i class="fas fa-chart-line text-xl text-orange-500 mb-1"></i>
+                    <p class="text-xs">Reports</p>
+                </button>
+            </div>
+
+            <!-- Recent Orders -->
+            <h3 class="text-md font-semibold mb-3">Recent Orders</h3>
+            <div id="recent-orders" class="space-y-3">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Orders Page -->
+        <div id="page-orders" class="page hidden p-4">
+            <h2 class="text-lg font-semibold mb-4">Order Management</h2>
+
+            <div class="flex space-x-2 mb-4 overflow-x-auto">
+                <button class="order-filter active line-green text-white px-4 py-2 rounded-full text-sm whitespace-nowrap" data-status="all">All</button>
+                <button class="order-filter bg-gray-200 px-4 py-2 rounded-full text-sm whitespace-nowrap" data-status="pending">Pending</button>
+                <button class="order-filter bg-gray-200 px-4 py-2 rounded-full text-sm whitespace-nowrap" data-status="approved">Approved</button>
+                <button class="order-filter bg-gray-200 px-4 py-2 rounded-full text-sm whitespace-nowrap" data-status="shipped">Shipped</button>
+                <button class="order-filter bg-gray-200 px-4 py-2 rounded-full text-sm whitespace-nowrap" data-status="done">Done</button>
+            </div>
+
+            <div id="orders-list" class="space-y-3">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Products Page -->
+        <div id="page-products" class="page hidden p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">My Products</h2>
+                <button onclick="showAddProduct()" class="line-green text-white px-4 py-2 rounded-lg text-sm">
+                    <i class="fas fa-plus mr-1"></i> Add
+                </button>
+            </div>
+
+            <div class="relative mb-4">
+                <input type="text" id="productSearch" placeholder="Search products..."
+                       class="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-green-500">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            </div>
+
+            <div id="products-list" class="space-y-3">
+                <!-- Loaded dynamically -->
+            </div>
+
+            <!-- Quick Post FAB -->
+            <button onclick="SellerApp.startQuickPost()" class="quickpost-fab" title="Quick Post">
+                <i class="fas fa-camera"></i>
+            </button>
+        </div>
+
+        <!-- Quick Post Page -->
+        <div id="page-quickpost" class="page hidden">
+            <div class="bg-white min-h-screen p-4">
+                <!-- Hidden file input (camera) -->
+                <input type="file" id="quickpost-camera" accept="image/*" capture="environment"
+                       class="hidden" onchange="SellerApp.handleQuickPostPhoto(this)">
+
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="SellerApp.cancelQuickPost()" class="text-gray-500 text-lg">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="text-lg font-bold">Quick Post</h2>
+                    <div class="w-8"></div>
+                </div>
+
+                <!-- Photo Grid (multi-image) -->
+                <div id="quickpost-photo-area" class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">รูปสินค้า (สูงสุด 10 รูป)</label>
+                    <div id="quickpost-photo-grid" class="grid grid-cols-4 gap-2">
+                        <!-- Main photo slot -->
+                        <div id="quickpost-main-slot" class="relative aspect-square rounded-xl overflow-hidden border-2 border-dashed border-gray-300 cursor-pointer bg-gray-50 flex items-center justify-center col-span-2 row-span-2"
+                             onclick="document.getElementById('quickpost-camera').click()">
+                            <img id="quickpost-preview" src="" class="hidden w-full h-full object-cover">
+                            <div id="quickpost-no-photo" class="text-center text-gray-400">
+                                <i class="fas fa-camera text-3xl mb-1"></i>
+                                <p class="text-xs">ถ่ายรูปหลัก</p>
+                            </div>
+                        </div>
+                        <!-- Extra photo slots rendered by JS -->
+                    </div>
+                    <input type="file" id="quickpost-extra-camera" accept="image/*" multiple
+                           class="hidden" onchange="SellerApp.handleQuickPostExtraPhotos(this)">
+                </div>
+
+                <!-- Required Fields -->
+                <div class="space-y-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อสินค้า *</label>
+                        <input type="text" id="quickpost-name" required
+                               placeholder="ชื่อสินค้าที่ต้องการขาย"
+                               class="w-full px-4 py-3 border-2 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ราคา (บาท) *</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-lg text-gray-400">&#3647;</span>
+                            <input type="number" id="quickpost-price" step="0.01" min="1" required
+                                   inputmode="decimal" placeholder="0.00"
+                                   class="w-full pl-10 pr-4 py-3 border-2 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่ *</label>
+                        <select id="quickpost-category" required
+                                onchange="SellerApp.onCategoryChange('quickpost')"
+                                class="w-full px-4 py-3 border-2 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="">เลือกหมวดหมู่</option>
+                        </select>
+                        <input type="text" id="quickpost-new-category" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่"
+                               class="hidden w-full mt-2 px-4 py-3 border-2 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    </div>
+                </div>
+
+                <!-- Expand Toggle -->
+                <div class="flex items-center justify-center py-2 mb-2 cursor-pointer"
+                     onclick="SellerApp.toggleQuickPostExpand()">
+                    <span class="text-sm text-gray-500">
+                        <i class="fas fa-chevron-down mr-1" id="quickpost-expand-icon"></i> More details (optional)
+                    </span>
+                </div>
+
+                <!-- Optional Fields (collapsed) -->
+                <div id="quickpost-optional" class="quickpost-optional collapsed space-y-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนสต็อก</label>
+                        <input type="number" id="quickpost-qty" min="0" placeholder="Stock quantity"
+                               class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="quickpost-description" rows="2" placeholder="Product details..."
+                                  class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                    </div>
+                </div>
+
+                <!-- Post Button -->
+                <div class="pb-24">
+                    <button onclick="SellerApp.submitQuickPost()" id="quickpost-submit-btn"
+                            class="w-full line-green text-white py-4 rounded-xl font-bold text-lg shadow-lg">
+                        <i class="fas fa-bolt mr-2"></i> โพสต์สินค้า
+                    </button>
+                </div>
+
+                <!-- Success Overlay -->
+                <div id="quickpost-success" class="hidden fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6">
+                    <div class="text-center">
+                        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-check text-4xl text-green-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Product Posted!</h3>
+                        <p class="text-gray-500 mb-6">Saved as draft. Submit for approval to publish.</p>
+                        <div class="space-y-3 w-full max-w-xs mx-auto">
+                            <button onclick="SellerApp.quickPostSubmitForApproval()"
+                                    class="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold">
+                                Submit for Approval
+                            </button>
+                            <button onclick="SellerApp.startQuickPost()"
+                                    class="w-full line-green text-white py-3 rounded-xl font-semibold">
+                                <i class="fas fa-plus mr-1"></i> Add Another
+                            </button>
+                            <button onclick="SellerApp.finishQuickPost()"
+                                    class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold">
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet Page -->
+        <div id="page-wallet" class="page hidden p-4">
+            <h2 class="text-lg font-semibold mb-4">Wallet</h2>
+
+            <!-- Balance Card -->
+            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-5 text-white shadow-lg mb-4">
+                <p class="text-sm opacity-80">Available Balance</p>
+                <p class="text-3xl font-bold my-2" id="wallet-balance">฿0</p>
+                <div class="flex justify-between text-sm opacity-80">
+                    <div>
+                        <p>Total Earned</p>
+                        <p class="font-semibold" id="wallet-earned">฿0</p>
+                    </div>
+                    <div class="text-right">
+                        <p>Total Withdrawn</p>
+                        <p class="font-semibold" id="wallet-withdrawn">฿0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex space-x-3 mb-4">
+                <button id="btn-withdraw" onclick="SellerApp.showWithdrawModal()"
+                        class="flex-1 line-green text-white py-3 rounded-xl font-semibold shadow">
+                    <i class="fas fa-money-bill-transfer mr-2"></i> Withdraw
+                </button>
+                <button onclick="SellerApp.showWithdrawalHistory()"
+                        class="flex-1 bg-white text-gray-700 py-3 rounded-xl font-semibold shadow border">
+                    <i class="fas fa-clock-rotate-left mr-2"></i> History
+                </button>
+            </div>
+
+            <!-- Transaction Filter -->
+            <div class="flex space-x-2 mb-3">
+                <button class="tx-filter active line-green text-white px-4 py-2 rounded-full text-sm" data-type="all" onclick="SellerApp.loadWalletTransactions('all')">All</button>
+                <button class="tx-filter bg-gray-200 px-4 py-2 rounded-full text-sm" data-type="credits" onclick="SellerApp.loadWalletTransactions('credits')">Credits</button>
+                <button class="tx-filter bg-gray-200 px-4 py-2 rounded-full text-sm" data-type="debits" onclick="SellerApp.loadWalletTransactions('debits')">Debits</button>
+            </div>
+
+            <!-- Transaction List -->
+            <div class="bg-white rounded-xl p-4 shadow">
+                <h3 class="font-semibold mb-3">Recent Transactions</h3>
+                <div id="wallet-transactions">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Page -->
+        <div id="page-reports" class="page hidden p-4">
+            <h2 class="text-lg font-semibold mb-4">Sales Reports</h2>
+
+            <div class="flex space-x-2 mb-4">
+                <button class="report-period active line-green text-white px-4 py-2 rounded-lg text-sm" data-period="today">Today</button>
+                <button class="report-period bg-gray-200 px-4 py-2 rounded-lg text-sm" data-period="week">This Week</button>
+                <button class="report-period bg-gray-200 px-4 py-2 rounded-lg text-sm" data-period="month">This Month</button>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 shadow mb-4">
+                <h3 class="font-semibold mb-3">Sales Summary</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Sales</p>
+                        <p class="text-xl font-bold" id="report-total-sales">฿0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Orders</p>
+                        <p class="text-xl font-bold" id="report-order-count">0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Items Sold</p>
+                        <p class="text-xl font-bold" id="report-items-sold">0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Avg. Order</p>
+                        <p class="text-xl font-bold" id="report-avg-order">฿0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-4 shadow">
+                <h3 class="font-semibold mb-3">Top Selling Products</h3>
+                <div id="top-products" class="space-y-2">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="page-profile" class="page hidden p-4">
+            <h2 class="text-lg font-semibold mb-4">Seller Profile</h2>
+
+            <div class="bg-white rounded-xl p-4 shadow mb-4">
+                <div class="flex items-center space-x-4 mb-4">
+                    <img id="profile-avatar" src="" alt="Profile" class="w-16 h-16 rounded-full">
+                    <div>
+                        <p class="font-semibold" id="profile-name">-</p>
+                        <p class="text-sm text-gray-500" id="profile-shop">-</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Status</span>
+                        <span class="text-green-600 font-medium" id="profile-status">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Products</span>
+                        <span id="profile-products">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Total Orders</span>
+                        <span id="profile-orders">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Rating</span>
+                        <span id="profile-rating">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="editProfile()" class="w-full bg-white rounded-xl p-4 shadow text-left flex items-center justify-between">
+                    <span><i class="fas fa-user-edit mr-3 text-gray-400"></i> Edit Profile</span>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                <button onclick="manageShop()" class="w-full bg-white rounded-xl p-4 shadow text-left flex items-center justify-between">
+                    <span><i class="fas fa-store mr-3 text-gray-400"></i> Shop Settings</span>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                <button onclick="contactSupport()" class="w-full bg-white rounded-xl p-4 shadow text-left flex items-center justify-between">
+                    <span><i class="fas fa-headset mr-3 text-gray-400"></i> Contact Support</span>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
+            <div class="flex justify-around py-2">
+                <button class="nav-btn active line-green-text flex flex-col items-center p-2" data-page="dashboard">
+                    <i class="fas fa-home text-xl"></i>
+                    <span class="text-xs mt-1">Home</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="orders">
+                    <i class="fas fa-clipboard-list text-xl"></i>
+                    <span class="text-xs mt-1">Orders</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="products">
+                    <i class="fas fa-box text-xl"></i>
+                    <span class="text-xs mt-1">Products</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="wallet">
+                    <i class="fas fa-wallet text-xl"></i>
+                    <span class="text-xs mt-1">Wallet</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="profile">
+                    <i class="fas fa-user text-xl"></i>
+                    <span class="text-xs mt-1">Profile</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Order Detail Modal -->
+    <div id="order-detail-modal" class="hidden fixed inset-0 z-50">
+        <div class="modal-overlay absolute inset-0" onclick="SellerApp.closeModal('order-detail-modal')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto z-10">
+            <div class="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg">Order Detail</h3>
+                <button onclick="SellerApp.closeModal('order-detail-modal')" class="text-gray-400 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="order-detail-content" class="p-4">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Form Modal -->
+    <div id="product-form-modal" class="hidden fixed inset-0 z-50">
+        <div class="modal-overlay absolute inset-0" onclick="SellerApp.closeModal('product-form-modal')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto z-10">
+            <div class="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg" id="product-form-title">Add Product</h3>
+                <button onclick="SellerApp.closeModal('product-form-modal')" class="text-gray-400 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="product-form" class="p-4 space-y-4" onsubmit="SellerApp.handleProductFormSubmit(event)">
+                <!-- Main Image -->
+                <div class="text-center">
+                    <img id="product-image-preview" src="" class="w-24 h-24 rounded-lg object-cover mx-auto mb-2">
+                    <label class="text-sm text-green-600 cursor-pointer">
+                        <i class="fas fa-camera mr-1"></i> Main Image
+                        <input type="file" name="image" accept="image/*" class="hidden" onchange="document.getElementById('product-image-preview').src = URL.createObjectURL(this.files[0])">
+                    </label>
+                </div>
+
+                <!-- Extra Images Gallery -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Extra Images</label>
+                    <div id="gallery-grid" class="grid grid-cols-4 gap-2 mb-2">
+                        <!-- Existing + pending images rendered here by JS -->
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label id="gallery-add-btn" class="inline-flex items-center px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-200">
+                            <i class="fas fa-plus mr-1"></i> Add Photos
+                            <input type="file" accept="image/*" multiple class="hidden" onchange="SellerApp.handleGalleryAdd(this.files)">
+                        </label>
+                        <button type="button" id="gallery-video-btn" onclick="SellerApp.toggleVideoUrlInput()"
+                                class="inline-flex items-center px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600 hover:bg-gray-200">
+                            <i class="fas fa-video mr-1"></i> Add Video URL
+                        </button>
+                    </div>
+                    <div id="video-url-input-container" class="hidden mt-2">
+                        <div class="flex items-center gap-2">
+                            <input type="url" id="gallery-video-url" placeholder="https://www.youtube.com/watch?v=..."
+                                   class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <button type="button" onclick="SellerApp.addVideoUrl()"
+                                    class="px-3 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">YouTube or video URL. A placeholder image will be used.</p>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Max 10 extra images/videos.</p>
+                </div>
+
+                <!-- Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                    <input type="text" name="name" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <!-- Price -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Price (฿) *</label>
+                    <input type="number" name="list_price" step="0.01" min="0" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <!-- Category -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่ *</label>
+                    <select id="product-category" required
+                            onchange="SellerApp.onCategoryChange('product')"
+                            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">เลือกหมวดหมู่</option>
+                    </select>
+                    <input type="text" id="product-new-category" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่"
+                           class="hidden w-full mt-2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <!-- Quantity -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Initial Quantity</label>
+                    <input type="number" name="mp_qty" min="0" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="description_sale" rows="3" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 line-green text-white py-3 rounded-lg font-semibold">Save</button>
+                    <button type="button" id="btn-submit-product" class="flex-1 bg-blue-500 text-white py-3 rounded-lg font-semibold"
+                            onclick="SellerApp.handleSubmitForApproval(document.getElementById('product-form').dataset.productId)">
+                        Submit for Approval
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Profile Edit Modal -->
+    <div id="profile-edit-modal" class="hidden fixed inset-0 z-50">
+        <div class="modal-overlay absolute inset-0" onclick="SellerApp.closeModal('profile-edit-modal')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto z-10">
+            <div class="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg">Edit Profile</h3>
+                <button onclick="SellerApp.closeModal('profile-edit-modal')" class="text-gray-400 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="profile-edit-form" class="p-4 space-y-4" onsubmit="SellerApp.handleProfileFormSubmit(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" name="name" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" name="email" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="tel" name="phone" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+                <button type="submit" class="w-full line-green text-white py-3 rounded-lg font-semibold">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Shop Edit Modal -->
+    <div id="shop-edit-modal" class="hidden fixed inset-0 z-50">
+        <div class="modal-overlay absolute inset-0" onclick="SellerApp.closeModal('shop-edit-modal')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto z-10">
+            <div class="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg">Shop Settings</h3>
+                <button onclick="SellerApp.closeModal('shop-edit-modal')" class="text-gray-400 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4">
+                <p class="text-lg font-semibold mb-4" id="shop-name-display"></p>
+                <form id="shop-edit-form" class="space-y-4" onsubmit="SellerApp.handleShopFormSubmit(event)">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
+                        <input type="text" name="shop_tag_line" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea name="description" rows="3" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" name="email" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <input type="tel" name="phone" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <button type="submit" class="w-full line-green text-white py-3 rounded-lg font-semibold">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdrawal Modal -->
+    <div id="withdraw-modal" class="hidden fixed inset-0 z-50">
+        <div class="modal-overlay absolute inset-0" onclick="SellerApp.closeModal('withdraw-modal')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] overflow-y-auto z-10">
+            <div class="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg">Withdraw Funds</h3>
+                <button onclick="SellerApp.closeModal('withdraw-modal')" class="text-gray-400 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <form class="p-4 space-y-4" onsubmit="SellerApp.handleWithdrawSubmit(event)">
+                <div class="bg-green-50 rounded-lg p-3">
+                    <p class="text-sm text-gray-600">Available Balance</p>
+                    <p class="text-xl font-bold text-green-600" id="withdraw-available">฿0</p>
+                    <p class="text-xs text-gray-400" id="withdraw-min">Min: ฿0</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount (฿) *</label>
+                    <input type="number" id="withdraw-amount" step="0.01" min="1" required
+                           class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                           placeholder="Enter amount">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                    <input type="text" id="withdraw-bank-name"
+                           class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                           placeholder="e.g. Kasikorn, Bangkok Bank">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
+                    <input type="text" id="withdraw-account-name"
+                           class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                           placeholder="Full name on account">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                    <input type="text" id="withdraw-account-number"
+                           class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                           placeholder="Bank account number">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                    <input type="text" id="withdraw-branch"
+                           class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                           placeholder="Branch name (optional)">
+                </div>
+                <button type="submit" class="w-full line-green text-white py-3 rounded-lg font-semibold">
+                    <i class="fas fa-paper-plane mr-2"></i> Submit Withdrawal Request
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Withdrawal History Modal -->
+    <div id="withdrawal-history-modal" class="hidden fixed inset-0 z-50">
+        <div class="modal-overlay absolute inset-0" onclick="SellerApp.closeModal('withdrawal-history-modal')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto z-10">
+            <div class="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-lg">Withdrawal History</h3>
+                <button onclick="SellerApp.closeModal('withdrawal-history-modal')" class="text-gray-400 text-xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="withdrawal-history-list" class="p-4">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js?v=3"></script>
+</body>
+</html>

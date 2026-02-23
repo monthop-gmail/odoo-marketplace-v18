@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- ==================== List View ==================== -->
+        <record id="seller_shop_staff_list_view" model="ir.ui.view">
+            <field name="name">seller.shop.staff.list</field>
+            <field name="model">seller.shop.staff</field>
+            <field name="arch" type="xml">
+                <list string="Shop Staff">
+                    <field name="staff_partner_id"/>
+                    <field name="shop_id"/>
+                    <field name="seller_id"/>
+                    <field name="role"/>
+                    <field name="is_active"/>
+                    <field name="join_date"/>
+                    <field name="invited_by"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- ==================== Form View ==================== -->
+        <record id="seller_shop_staff_form_view" model="ir.ui.view">
+            <field name="name">seller.shop.staff.form</field>
+            <field name="model">seller.shop.staff</field>
+            <field name="arch" type="xml">
+                <form string="Shop Staff">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="shop_id"/>
+                                <field name="staff_partner_id"/>
+                                <field name="role"/>
+                            </group>
+                            <group>
+                                <field name="is_active"/>
+                                <field name="invited_by"/>
+                                <field name="join_date"/>
+                                <field name="seller_id" readonly="1"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- ==================== Search View ==================== -->
+        <record id="seller_shop_staff_search_view" model="ir.ui.view">
+            <field name="name">seller.shop.staff.search</field>
+            <field name="model">seller.shop.staff</field>
+            <field name="arch" type="xml">
+                <search string="Search Staff">
+                    <field name="staff_partner_id"/>
+                    <field name="shop_id"/>
+                    <filter string="Active" name="active" domain="[('is_active', '=', True)]"/>
+                    <filter string="Inactive" name="inactive" domain="[('is_active', '=', False)]"/>
+                    <separator/>
+                    <filter string="Staff" name="role_staff" domain="[('role', '=', 'staff')]"/>
+                    <filter string="Shop Manager" name="role_manager" domain="[('role', '=', 'manager')]"/>
+                    <group string="Group By">
+                        <filter string="Shop" name="group_shop" context="{'group_by': 'shop_id'}"/>
+                        <filter string="Role" name="group_role" context="{'group_by': 'role'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- ==================== Action ==================== -->
+        <record id="seller_shop_staff_action" model="ir.actions.act_window">
+            <field name="name">Shop Staff</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">seller.shop.staff</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="seller_shop_staff_search_view"/>
+            <field name="context">{'search_default_active': 1}</field>
+        </record>
+
+        <!-- ==================== Inherit seller.shop form → Staff tab ==================== -->
+        <record id="seller_shop_form_inherit_staff" model="ir.ui.view">
+            <field name="name">seller.shop.form.inherit.staff</field>
+            <field name="model">seller.shop</field>
+            <field name="inherit_id" ref="core_marketplace.wk_seller_shop_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook/page[@name='seller_shop_t_c']" position="after">
+                    <page name="staff_members" string="Staff Members" groups="core_marketplace.marketplace_officer_group">
+                        <field name="staff_count" invisible="1"/>
+                        <field name="staff_ids">
+                            <list editable="bottom">
+                                <field name="staff_partner_id"/>
+                                <field name="role"/>
+                                <field name="is_active"/>
+                                <field name="join_date" readonly="1"/>
+                                <field name="invited_by" readonly="1"/>
+                            </list>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

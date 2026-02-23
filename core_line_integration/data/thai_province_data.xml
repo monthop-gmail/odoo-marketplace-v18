@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!--
+        Thai Province/District Data
+
+        Note: Odoo already has res.country.state for Thailand provinces.
+        This file provides:
+        1. Thai district (อำเภอ) data as a new model
+        2. Common shipping zones for cost calculation
+        -->
+
+        <!-- Shipping Zone Model will be used for shipping cost calculation -->
+        <!-- For now, we use a simplified approach with province-based zones -->
+
+        <!-- Bangkok Metropolitan (Zone 1 - Fast delivery) -->
+        <record id="shipping_zone_bangkok" model="ir.config_parameter">
+            <field name="key">core_line_integration.zone_bangkok</field>
+            <field name="value">10,11,12,13</field>
+        </record>
+
+        <!-- Central Region (Zone 2) -->
+        <record id="shipping_zone_central" model="ir.config_parameter">
+            <field name="key">core_line_integration.zone_central</field>
+            <field name="value">14,15,16,17,18,19,20,21,22,23,24,25,26,27</field>
+        </record>
+
+        <!-- Northern Region (Zone 3) -->
+        <record id="shipping_zone_north" model="ir.config_parameter">
+            <field name="key">core_line_integration.zone_north</field>
+            <field name="value">50,51,52,53,54,55,56,57,58</field>
+        </record>
+
+        <!-- Northeastern Region (Zone 4) -->
+        <record id="shipping_zone_northeast" model="ir.config_parameter">
+            <field name="key">core_line_integration.zone_northeast</field>
+            <field name="value">30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49</field>
+        </record>
+
+        <!-- Southern Region (Zone 5) -->
+        <record id="shipping_zone_south" model="ir.config_parameter">
+            <field name="key">core_line_integration.zone_south</field>
+            <field name="value">80,81,82,83,84,85,86,90,91,92,93,94,95,96</field>
+        </record>
+
+        <!-- Default shipping rates by zone (in THB) -->
+        <record id="shipping_rate_zone1" model="ir.config_parameter">
+            <field name="key">core_line_integration.shipping_rate_zone1</field>
+            <field name="value">50</field>
+        </record>
+        <record id="shipping_rate_zone2" model="ir.config_parameter">
+            <field name="key">core_line_integration.shipping_rate_zone2</field>
+            <field name="value">70</field>
+        </record>
+        <record id="shipping_rate_zone3" model="ir.config_parameter">
+            <field name="key">core_line_integration.shipping_rate_zone3</field>
+            <field name="value">90</field>
+        </record>
+        <record id="shipping_rate_zone4" model="ir.config_parameter">
+            <field name="key">core_line_integration.shipping_rate_zone4</field>
+            <field name="value">90</field>
+        </record>
+        <record id="shipping_rate_zone5" model="ir.config_parameter">
+            <field name="key">core_line_integration.shipping_rate_zone5</field>
+            <field name="value">100</field>
+        </record>
+
+        <!-- Free shipping threshold -->
+        <record id="free_shipping_threshold" model="ir.config_parameter">
+            <field name="key">core_line_integration.free_shipping_threshold</field>
+            <field name="value">1000</field>
+        </record>
+    </data>
+</odoo>

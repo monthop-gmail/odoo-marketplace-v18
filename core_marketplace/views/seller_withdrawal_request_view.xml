@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Withdrawal Request Form View -->
+        <record id="seller_withdrawal_request_form_view" model="ir.ui.view">
+            <field name="name">seller.withdrawal.request.form</field>
+            <field name="model">seller.withdrawal.request</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="action_submit" string="Submit" type="object"
+                                class="btn-primary"
+                                invisible="state != 'draft'"/>
+                        <button name="action_approve" string="Approve" type="object"
+                                class="btn-success"
+                                invisible="state != 'pending'"
+                                groups="core_marketplace.marketplace_officer_group"/>
+                        <button name="action_reject" string="Reject" type="object"
+                                class="btn-danger"
+                                invisible="state not in ('pending', 'approved')"
+                                groups="core_marketplace.marketplace_officer_group"/>
+                        <button name="action_process" string="Process Payment" type="object"
+                                class="btn-primary"
+                                invisible="state != 'approved'"
+                                groups="core_marketplace.marketplace_officer_group"/>
+                        <button name="action_complete" string="Mark Completed" type="object"
+                                class="btn-success"
+                                invisible="state != 'processing'"
+                                groups="core_marketplace.marketplace_officer_group"/>
+                        <button name="action_cancel" string="Cancel" type="object"
+                                invisible="state not in ('draft', 'pending')"/>
+                        <field name="state" widget="statusbar"
+                               statusbar_visible="draft,pending,approved,processing,completed"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <group string="Request Info">
+                                <field name="name"/>
+                                <field name="seller_id"/>
+                                <field name="wallet_id"/>
+                                <field name="amount" widget="monetary"/>
+                                <field name="currency_id" invisible="1"/>
+                                <field name="payment_method_id"/>
+                            </group>
+                            <group string="Bank Details">
+                                <field name="bank_name"/>
+                                <field name="bank_account_name"/>
+                                <field name="bank_account_number"/>
+                                <field name="bank_branch"/>
+                            </group>
+                        </group>
+                        <group invisible="state != 'rejected'" string="Rejection">
+                            <field name="rejection_reason"/>
+                        </group>
+                        <group string="Timeline">
+                            <group>
+                                <field name="requested_date"/>
+                                <field name="approved_date"/>
+                                <field name="completed_date"/>
+                            </group>
+                            <group>
+                                <field name="approved_by"/>
+                                <field name="seller_payment_id"/>
+                                <field name="company_id" groups="base.group_multi_company"/>
+                            </group>
+                        </group>
+                        <group>
+                            <field name="note" placeholder="Internal notes..."/>
+                        </group>
+                    </sheet>
+                    <chatter/>
+                </form>
+            </field>
+        </record>
+
+        <!-- Withdrawal Request List View -->
+        <record id="seller_withdrawal_request_list_view" model="ir.ui.view">
+            <field name="name">seller.withdrawal.request.list</field>
+            <field name="model">seller.withdrawal.request</field>
+            <field name="arch" type="xml">
+                <list decoration-warning="state == 'pending'"
+                      decoration-info="state in ('approved', 'processing')"
+                      decoration-success="state == 'completed'"
+                      decoration-danger="state == 'rejected'">
+                    <field name="name"/>
+                    <field name="seller_id"/>
+                    <field name="amount" widget="monetary" sum="Total Amount"/>
+                    <field name="payment_method_id"/>
+                    <field name="state" widget="badge"
+                           decoration-success="state == 'completed'"
+                           decoration-warning="state == 'pending'"
+                           decoration-danger="state == 'rejected'"
+                           decoration-info="state in ('approved', 'processing')"/>
+                    <field name="requested_date"/>
+                    <field name="approved_by"/>
+                    <field name="completed_date"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Withdrawal Request Search View -->
+        <record id="seller_withdrawal_request_search_view" model="ir.ui.view">
+            <field name="name">seller.withdrawal.request.search</field>
+            <field name="model">seller.withdrawal.request</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="name"/>
+                    <field name="seller_id"/>
+                    <filter string="Pending" name="pending" domain="[('state', '=', 'pending')]"/>
+                    <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+                    <filter string="Processing" name="processing" domain="[('state', '=', 'processing')]"/>
+                    <filter string="Completed" name="completed" domain="[('state', '=', 'completed')]"/>
+                    <filter string="Rejected" name="rejected" domain="[('state', '=', 'rejected')]"/>
+                    <separator/>
+                    <filter string="Action Required" name="action_required"
+                            domain="[('state', 'in', ('pending', 'approved', 'processing'))]"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                        <filter string="Seller" name="group_seller" context="{'group_by': 'seller_id'}"/>
+                        <filter string="Month" name="group_month" context="{'group_by': 'requested_date:month'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- Withdrawal Request Action -->
+        <record id="seller_withdrawal_request_action" model="ir.actions.act_window">
+            <field name="name">Withdrawal Requests</field>
+            <field name="res_model">seller.withdrawal.request</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="seller_withdrawal_request_search_view"/>
+            <field name="context">{'search_default_action_required': 1}</field>
+        </record>
+    </data>
+</odoo>

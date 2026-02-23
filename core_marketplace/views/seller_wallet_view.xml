@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Wallet Form View -->
+        <record id="seller_wallet_form_view" model="ir.ui.view">
+            <field name="name">seller.wallet.form</field>
+            <field name="model">seller.wallet</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="action_freeze" string="Freeze Wallet" type="object"
+                                class="btn-warning"
+                                invisible="state != 'active'"
+                                groups="core_marketplace.marketplace_officer_group"/>
+                        <button name="action_unfreeze" string="Unfreeze Wallet" type="object"
+                                class="btn-success"
+                                invisible="state != 'frozen'"
+                                groups="core_marketplace.marketplace_officer_group"/>
+                        <field name="state" widget="statusbar"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_view_transactions" type="object"
+                                    class="oe_stat_button" icon="fa-list">
+                                <field name="transaction_count" string="Transactions"
+                                       widget="statinfo"/>
+                            </button>
+                        </div>
+                        <group>
+                            <group string="Wallet Info">
+                                <field name="name"/>
+                                <field name="seller_id"/>
+                                <field name="currency_id"/>
+                                <field name="company_id" groups="base.group_multi_company"/>
+                            </group>
+                            <group string="Balance">
+                                <field name="balance" widget="monetary"/>
+                                <field name="total_earned" widget="monetary"/>
+                                <field name="total_withdrawn" widget="monetary"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Recent Transactions">
+                                <field name="transaction_ids" readonly="1">
+                                    <list>
+                                        <field name="date"/>
+                                        <field name="type"/>
+                                        <field name="amount" widget="monetary"
+                                               decoration-success="amount > 0"
+                                               decoration-danger="amount &lt; 0"/>
+                                        <field name="balance_after" widget="monetary"/>
+                                        <field name="reference"/>
+                                        <field name="description"/>
+                                    </list>
+                                </field>
+                            </page>
+                            <page string="Withdrawal Requests">
+                                <field name="withdrawal_request_ids" readonly="1">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="amount" widget="monetary"/>
+                                        <field name="state"
+                                               decoration-success="state == 'completed'"
+                                               decoration-warning="state in ('pending', 'approved')"
+                                               decoration-danger="state == 'rejected'"
+                                               decoration-info="state == 'processing'"
+                                               widget="badge"/>
+                                        <field name="requested_date"/>
+                                        <field name="completed_date"/>
+                                    </list>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <chatter/>
+                </form>
+            </field>
+        </record>
+
+        <!-- Wallet List View -->
+        <record id="seller_wallet_list_view" model="ir.ui.view">
+            <field name="name">seller.wallet.list</field>
+            <field name="model">seller.wallet</field>
+            <field name="arch" type="xml">
+                <list>
+                    <field name="name"/>
+                    <field name="seller_id"/>
+                    <field name="balance" widget="monetary" sum="Total Balance"/>
+                    <field name="total_earned" widget="monetary" sum="Total Earned"/>
+                    <field name="total_withdrawn" widget="monetary" sum="Total Withdrawn"/>
+                    <field name="state" widget="badge"
+                           decoration-success="state == 'active'"
+                           decoration-warning="state == 'frozen'"
+                           decoration-danger="state == 'closed'"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Wallet Search View -->
+        <record id="seller_wallet_search_view" model="ir.ui.view">
+            <field name="name">seller.wallet.search</field>
+            <field name="model">seller.wallet</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="name"/>
+                    <field name="seller_id"/>
+                    <filter string="Active" name="active_wallets" domain="[('state', '=', 'active')]"/>
+                    <filter string="Frozen" name="frozen_wallets" domain="[('state', '=', 'frozen')]"/>
+                    <separator/>
+                    <filter string="Has Balance" name="has_balance" domain="[('balance', '>', 0)]"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                        <filter string="Seller" name="group_seller" context="{'group_by': 'seller_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- Wallet Action -->
+        <record id="seller_wallet_action" model="ir.actions.act_window">
+            <field name="name">Seller Wallets</field>
+            <field name="res_model">seller.wallet</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="seller_wallet_search_view"/>
+            <field name="context">{'search_default_active_wallets': 1}</field>
+        </record>
+    </data>
+</odoo>

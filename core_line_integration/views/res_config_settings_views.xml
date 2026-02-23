@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- LINE Marketplace Settings in Website Configuration -->
+    <record id="res_config_settings_view_form_inherit_line_buyer" model="ir.ui.view">
+        <field name="name">res.config.settings.form.inherit.line.buyer</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="website_sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='website_shop_checkout']" position="after">
+                <block title="LINE Marketplace Integration" name="line_buyer_settings">
+                    <setting id="line_buyer_api_setting" string="Marketplace API"
+                             help="Enable REST API endpoints for LINE marketplace apps">
+                        <field name="line_buyer_api_enabled"/>
+                    </setting>
+                    <setting id="line_buyer_default_channel" string="Default Channel"
+                             help="Default LINE channel for new buyers">
+                        <field name="line_buyer_default_channel_id"/>
+                    </setting>
+                    <setting id="line_buyer_mock_auth_setting" string="Mock Authentication"
+                             help="Enable mock authentication for local testing">
+                        <field name="line_buyer_mock_auth"/>
+                        <div class="text-muted">
+                            Use this for testing without actual LINE integration.
+                            Disable in production.
+                        </div>
+                    </setting>
+                    <setting id="line_buyer_debug_setting" string="Debug Mode"
+                             help="Enable debug logging for API requests">
+                        <field name="line_buyer_api_debug"/>
+                    </setting>
+                </block>
+
+                <block title="LINE Notifications" name="line_notification_settings">
+                    <setting id="line_auto_notify_order_setting" string="Order Confirmation"
+                             help="Automatically send LINE notification when order is confirmed">
+                        <field name="line_auto_notify_order"/>
+                    </setting>
+                    <setting id="line_auto_notify_shipping_setting" string="Shipping Update"
+                             help="Automatically send LINE notification when order is shipped">
+                        <field name="line_auto_notify_shipping"/>
+                    </setting>
+                </block>
+
+                <block title="Cross-Channel Settings" name="cross_channel_settings">
+                    <setting id="cross_channel_purchase_setting" string="Cross-Channel Purchase"
+                             help="Allow buyers to purchase from sellers of different LINE channels">
+                        <field name="allow_cross_channel_purchase"/>
+                        <div class="text-muted">
+                            When enabled, a buyer who followed LINE OA of Cooperative A
+                            can still purchase from sellers of Cooperative B.
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

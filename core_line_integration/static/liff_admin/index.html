@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Panel - LINE LIFF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Sarabun', sans-serif; }
+        .admin-blue { background-color: #1e40af; }
+        .admin-blue-text { color: #1e40af; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading Admin Panel...</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden pb-20">
+        <!-- Header -->
+        <header class="admin-blue text-white p-4 sticky top-0 z-40 shadow-md">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold">Admin Panel</p>
+                        <p class="text-xs opacity-80" id="adminName">Administrator</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="refreshData()" class="p-2">
+                        <i class="fas fa-sync-alt text-xl"></i>
+                    </button>
+                    <button onclick="showSettings()" class="p-2">
+                        <i class="fas fa-cog text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="page p-4">
+            <h2 class="text-lg font-semibold mb-4">System Overview</h2>
+
+            <!-- System Stats -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="stat-card bg-white rounded-xl p-4 shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Members</p>
+                            <p class="text-2xl font-bold text-blue-600" id="stat-members">0</p>
+                        </div>
+                        <i class="fas fa-users text-3xl text-blue-200"></i>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl p-4 shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Today's Orders</p>
+                            <p class="text-2xl font-bold text-green-600" id="stat-orders">0</p>
+                        </div>
+                        <i class="fas fa-shopping-cart text-3xl text-green-200"></i>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl p-4 shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Active Sellers</p>
+                            <p class="text-2xl font-bold text-purple-600" id="stat-sellers">0</p>
+                        </div>
+                        <i class="fas fa-store text-3xl text-purple-200"></i>
+                    </div>
+                </div>
+                <div class="stat-card bg-white rounded-xl p-4 shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Revenue Today</p>
+                            <p class="text-2xl font-bold text-orange-600" id="stat-revenue">฿0</p>
+                        </div>
+                        <i class="fas fa-baht-sign text-3xl text-orange-200"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <h3 class="text-md font-semibold mb-3">Quick Actions</h3>
+            <div class="grid grid-cols-4 gap-3 mb-6">
+                <button onclick="showPage('members')" class="bg-white rounded-xl p-4 shadow text-center">
+                    <i class="fas fa-user-plus text-2xl text-blue-500 mb-2"></i>
+                    <p class="text-sm">Members</p>
+                </button>
+                <button onclick="showPage('orders')" class="bg-white rounded-xl p-4 shadow text-center">
+                    <i class="fas fa-clipboard-check text-2xl text-green-500 mb-2"></i>
+                    <p class="text-sm">Orders</p>
+                </button>
+                <button onclick="showPage('withdrawals')" class="bg-white rounded-xl p-4 shadow text-center">
+                    <i class="fas fa-money-bill-transfer text-2xl text-purple-500 mb-2"></i>
+                    <p class="text-sm">Withdrawals</p>
+                </button>
+                <button onclick="showPage('notifications')" class="bg-white rounded-xl p-4 shadow text-center">
+                    <i class="fas fa-bell text-2xl text-yellow-500 mb-2"></i>
+                    <p class="text-sm">Notify</p>
+                </button>
+            </div>
+
+            <!-- System Alerts -->
+            <h3 class="text-md font-semibold mb-3">System Alerts</h3>
+            <div id="alerts-container" class="space-y-3">
+                <div class="text-center text-gray-400 py-4">Loading alerts...</div>
+            </div>
+        </div>
+
+        <!-- Members Page -->
+        <div id="page-members" class="page hidden p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Member Management</h2>
+                <span class="text-sm text-gray-500" id="member-count">0 members</span>
+            </div>
+
+            <!-- Members / Sellers Tab -->
+            <div class="flex space-x-2 mb-4">
+                <button id="tab-members" onclick="AdminApp.switchMemberView('members')" class="flex-1 admin-blue text-white py-2 rounded-lg text-sm font-medium">Members</button>
+                <button id="tab-sellers" onclick="AdminApp.switchMemberView('sellers')" class="flex-1 bg-gray-200 py-2 rounded-lg text-sm font-medium">Sellers</button>
+            </div>
+
+            <!-- Seller State Filters (hidden by default) -->
+            <div id="seller-filters" class="hidden flex space-x-2 mb-4 overflow-x-auto">
+                <button onclick="AdminApp.loadSellers('all')" class="seller-filter px-3 py-1 rounded-full text-xs admin-blue text-white">All</button>
+                <button onclick="AdminApp.loadSellers('pending')" class="seller-filter px-3 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">Pending</button>
+                <button onclick="AdminApp.loadSellers('approved')" class="seller-filter px-3 py-1 rounded-full text-xs bg-green-100 text-green-800">Approved</button>
+                <button onclick="AdminApp.loadSellers('denied')" class="seller-filter px-3 py-1 rounded-full text-xs bg-red-100 text-red-800">Denied</button>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="bg-white rounded-xl p-3 shadow mb-4">
+                <div class="flex space-x-2">
+                    <input type="text" id="memberSearch" placeholder="Search members..."
+                           class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="searchMembers()" class="admin-blue text-white px-4 rounded-lg">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Member List -->
+            <div id="member-list" class="space-y-3">
+                <!-- Members loaded here -->
+            </div>
+        </div>
+
+        <!-- Orders Page -->
+        <div id="page-orders" class="page hidden p-4">
+            <h2 class="text-lg font-semibold mb-4">Order Management</h2>
+
+            <!-- Order Stats -->
+            <div class="grid grid-cols-4 gap-2 mb-4">
+                <div class="bg-white rounded-lg p-3 shadow text-center">
+                    <p class="text-xl font-bold text-yellow-600" id="orders-pending">0</p>
+                    <p class="text-xs text-gray-500">Pending</p>
+                </div>
+                <div class="bg-white rounded-lg p-3 shadow text-center">
+                    <p class="text-xl font-bold text-blue-600" id="orders-confirmed">0</p>
+                    <p class="text-xs text-gray-500">Confirmed</p>
+                </div>
+                <div class="bg-white rounded-lg p-3 shadow text-center">
+                    <p class="text-xl font-bold text-purple-600" id="orders-shipped">0</p>
+                    <p class="text-xs text-gray-500">Shipped</p>
+                </div>
+                <div class="bg-white rounded-lg p-3 shadow text-center">
+                    <p class="text-xl font-bold text-green-600" id="orders-completed">0</p>
+                    <p class="text-xs text-gray-500">Done</p>
+                </div>
+            </div>
+
+            <!-- Order List -->
+            <div id="order-list" class="space-y-3">
+                <!-- Orders loaded here -->
+            </div>
+        </div>
+
+        <!-- Withdrawals Page -->
+        <div id="page-withdrawals" class="page hidden p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Withdrawal Requests</h2>
+                <span class="text-sm text-gray-500" id="withdrawal-count">0 requests</span>
+            </div>
+
+            <!-- State Filters -->
+            <div class="flex space-x-2 mb-4 overflow-x-auto">
+                <button onclick="AdminApp.loadWithdrawals('all')" class="wd-filter-btn admin-blue text-white px-3 py-1 rounded-full text-xs" data-state="all">All</button>
+                <button onclick="AdminApp.loadWithdrawals('pending')" class="wd-filter-btn bg-gray-200 px-3 py-1 rounded-full text-xs" data-state="pending">Pending</button>
+                <button onclick="AdminApp.loadWithdrawals('approved')" class="wd-filter-btn bg-gray-200 px-3 py-1 rounded-full text-xs" data-state="approved">Approved</button>
+                <button onclick="AdminApp.loadWithdrawals('processing')" class="wd-filter-btn bg-gray-200 px-3 py-1 rounded-full text-xs" data-state="processing">Processing</button>
+                <button onclick="AdminApp.loadWithdrawals('completed')" class="wd-filter-btn bg-gray-200 px-3 py-1 rounded-full text-xs" data-state="completed">Completed</button>
+                <button onclick="AdminApp.loadWithdrawals('rejected')" class="wd-filter-btn bg-gray-200 px-3 py-1 rounded-full text-xs" data-state="rejected">Rejected</button>
+            </div>
+
+            <!-- Withdrawal List -->
+            <div id="withdrawal-list" class="space-y-3">
+                <!-- Withdrawals loaded here -->
+            </div>
+        </div>
+
+        <!-- Notifications Page -->
+        <div id="page-notifications" class="page hidden p-4">
+            <h2 class="text-lg font-semibold mb-4">Send Notifications</h2>
+
+            <!-- Notification Form -->
+            <div class="bg-white rounded-xl p-4 shadow mb-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Target</label>
+                    <select id="notifyTarget" class="w-full px-3 py-2 border rounded-lg">
+                        <option value="all">All Members</option>
+                        <option value="buyers">Buyers Only</option>
+                        <option value="sellers">Sellers Only</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Message Type</label>
+                    <div class="flex space-x-2">
+                        <button class="msg-type-btn active admin-blue text-white px-4 py-2 rounded-lg text-sm" data-type="text">Text</button>
+                        <button class="msg-type-btn px-4 py-2 rounded-lg text-sm bg-gray-200" data-type="image">Image</button>
+                        <button class="msg-type-btn px-4 py-2 rounded-lg text-sm bg-gray-200" data-type="flex">Flex</button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Message</label>
+                    <textarea id="notifyMessage" rows="4" class="w-full px-3 py-2 border rounded-lg resize-none"
+                              placeholder="Enter your message..."></textarea>
+                </div>
+
+                <button onclick="sendNotification()" class="w-full admin-blue text-white py-3 rounded-lg font-medium">
+                    <i class="fas fa-paper-plane mr-2"></i> Send Notification
+                </button>
+            </div>
+
+            <!-- Recent Notifications -->
+            <h3 class="text-md font-semibold mb-3">Recent Notifications</h3>
+            <div id="notification-history" class="space-y-3">
+                <!-- History loaded here -->
+            </div>
+        </div>
+
+        <!-- Team Page (Manager only) -->
+        <div id="page-team" class="page hidden p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Admin Team</h2>
+                <button onclick="AdminApp.showInviteModal()" class="admin-blue text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <i class="fas fa-user-plus mr-1"></i> เชิญแอดมิน
+                </button>
+            </div>
+
+            <!-- State Filters -->
+            <div class="flex space-x-2 mb-4">
+                <button onclick="AdminApp.loadTeam('active')" class="team-filter-btn admin-blue text-white px-3 py-1 rounded-full text-xs" data-state="active">Active</button>
+                <button onclick="AdminApp.loadTeam('revoked')" class="team-filter-btn bg-gray-200 px-3 py-1 rounded-full text-xs" data-state="revoked">Revoked</button>
+                <button onclick="AdminApp.loadTeam('all')" class="team-filter-btn bg-gray-200 px-3 py-1 rounded-full text-xs" data-state="all">All</button>
+            </div>
+
+            <!-- Team Count -->
+            <p class="text-sm text-gray-500 mb-3" id="team-count">0 members</p>
+
+            <!-- Team List -->
+            <div id="team-list" class="space-y-3">
+                <!-- Team members loaded here -->
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="page-settings" class="page hidden p-4">
+            <h2 class="text-lg font-semibold mb-4">System Settings</h2>
+
+            <div class="space-y-3">
+                <div class="bg-white rounded-xl p-4 shadow">
+                    <h3 class="font-medium mb-3">LINE Channel</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Channel Code</span>
+                            <span id="channel-id">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Status</span>
+                            <span class="text-green-600">Connected</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 shadow">
+                    <h3 class="font-medium mb-3">Notification Settings</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">Auto notify on new order</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggle-notify-order" class="sr-only peer"
+                                       onchange="AdminApp.updateSetting('auto_notify_new_order', this.checked)">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">Auto notify on shipping</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggle-notify-shipping" class="sr-only peer"
+                                       onchange="AdminApp.updateSetting('auto_notify_shipping', this.checked)">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 shadow">
+                    <h3 class="font-medium mb-3">LIFF Apps</h3>
+                    <div id="liff-apps-list" class="space-y-2 text-sm">
+                        <!-- LIFF apps loaded here -->
+                    </div>
+                </div>
+
+                <button onclick="openOdooBackend()" class="w-full bg-gray-800 text-white py-3 rounded-xl font-medium">
+                    <i class="fas fa-external-link-alt mr-2"></i> Open Odoo Backend
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
+            <div class="flex justify-around py-2">
+                <button class="nav-btn active admin-blue-text flex flex-col items-center p-2" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt text-xl"></i>
+                    <span class="text-xs mt-1">Dashboard</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="members">
+                    <i class="fas fa-users text-xl"></i>
+                    <span class="text-xs mt-1">Members</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="orders">
+                    <i class="fas fa-receipt text-xl"></i>
+                    <span class="text-xs mt-1">Orders</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="notifications">
+                    <i class="fas fa-bullhorn text-xl"></i>
+                    <span class="text-xs mt-1">Notify</span>
+                </button>
+                <button id="nav-team" class="nav-btn flex flex-col items-center p-2 hidden" data-page="team">
+                    <i class="fas fa-user-shield text-xl"></i>
+                    <span class="text-xs mt-1">Team</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="settings">
+                    <i class="fas fa-cogs text-xl"></i>
+                    <span class="text-xs mt-1">Settings</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js?v=2"></script>
+    <script src="js/app.js?v=3"></script>
+</body>
+</html>

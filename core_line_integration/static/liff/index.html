@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#00B900">
+    <title>LINE Shop</title>
+
+    <!-- LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading" class="loading-screen">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Login Required Screen -->
+    <div id="login-required" class="screen hidden">
+        <div class="center-content">
+            <div class="logo">LINE Shop</div>
+            <p>Please login to continue</p>
+            <button id="btn-login" class="btn btn-primary btn-lg">Login with LINE</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <img id="user-avatar" class="avatar" src="" alt="">
+                <span id="user-name">Guest</span>
+            </div>
+            <div class="header-right">
+                <button id="btn-cart" class="btn-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="currentColor" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                    </svg>
+                    <span id="cart-badge" class="badge hidden">0</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-page="home">Home</button>
+            <button class="nav-tab" data-page="products">Products</button>
+            <button class="nav-tab" data-page="cart">Cart</button>
+            <button class="nav-tab" data-page="orders">Orders</button>
+        </nav>
+
+        <!-- Pages Container -->
+        <main class="main-content">
+            <!-- Home Page -->
+            <div id="page-home" class="page active">
+                <div class="welcome-banner">
+                    <h1>Welcome!</h1>
+                    <p>Browse our products and shop with ease</p>
+                </div>
+
+                <section class="section">
+                    <h2 class="section-title">Featured Products</h2>
+                    <div id="featured-products" class="product-grid">
+                        <!-- Products loaded dynamically -->
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2 class="section-title">Categories</h2>
+                    <div id="categories" class="category-grid">
+                        <!-- Categories loaded dynamically -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Products Page -->
+            <div id="page-products" class="page hidden">
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Search products...">
+                    <button id="btn-search" class="btn-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="filter-bar">
+                    <select id="category-filter">
+                        <option value="">All Categories</option>
+                    </select>
+                    <select id="sort-filter">
+                        <option value="name">Name A-Z</option>
+                        <option value="-name">Name Z-A</option>
+                        <option value="price">Price: Low to High</option>
+                        <option value="-price">Price: High to Low</option>
+                    </select>
+                </div>
+
+                <div id="products-list" class="product-grid">
+                    <!-- Products loaded dynamically -->
+                </div>
+
+                <div id="products-pagination" class="pagination hidden">
+                    <button id="btn-prev-page" class="btn btn-sm">Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="btn-next-page" class="btn btn-sm">Next</button>
+                </div>
+            </div>
+
+            <!-- Product Detail Modal -->
+            <div id="product-modal" class="modal hidden">
+                <div class="modal-content">
+                    <button class="modal-close">&times;</button>
+                    <div id="product-detail">
+                        <!-- Product detail loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cart Page -->
+            <div id="page-cart" class="page hidden">
+                <h2 class="page-title">ตะกร้าสินค้า</h2>
+
+                <div id="cart-empty" class="empty-state hidden">
+                    <svg viewBox="0 0 24 24" width="64" height="64">
+                        <path fill="#ccc" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                    </svg>
+                    <p>ตะกร้าว่างเปล่า</p>
+                    <button class="btn btn-primary" onclick="App.showPage('products')">เลือกซื้อสินค้า</button>
+                </div>
+
+                <div id="cart-items" class="cart-list">
+                    <!-- Cart items loaded dynamically -->
+                </div>
+
+                <div id="cart-summary" class="cart-summary hidden">
+                    <div class="summary-row">
+                        <span>ราคาสินค้า</span>
+                        <span id="cart-subtotal">0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>ภาษี</span>
+                        <span id="cart-tax">0</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>รวมทั้งสิ้น</span>
+                        <span id="cart-total">0</span>
+                    </div>
+                    <button id="btn-checkout" class="btn btn-primary btn-block">ดำเนินการสั่งซื้อ</button>
+                </div>
+            </div>
+
+            <!-- Checkout Page -->
+            <div id="page-checkout" class="page hidden">
+                <h2 class="page-title">Checkout</h2>
+
+                <form id="checkout-form">
+                    <section class="checkout-section">
+                        <h3>Shipping Address</h3>
+                        <div id="address-list" class="address-list">
+                            <!-- Addresses loaded dynamically -->
+                        </div>
+                        <button type="button" id="btn-new-address" class="btn btn-outline">+ Add New Address</button>
+                    </section>
+
+                    <section class="checkout-section">
+                        <h3>Order Note</h3>
+                        <textarea id="order-note" placeholder="Add a note to your order (optional)"></textarea>
+                    </section>
+
+                    <section class="checkout-section">
+                        <h3>Shipping Cost</h3>
+                        <div id="shipping-cost-section">
+                            <div class="shipping-cost-row">
+                                <span>ค่าจัดส่ง</span>
+                                <span id="shipping-cost">฿0</span>
+                            </div>
+                            <div id="free-shipping-notice" class="free-shipping-notice hidden">
+                                ซื้อเพิ่มอีก <span id="free-shipping-remaining">฿0</span> ส่งฟรี!
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="checkout-section">
+                        <h3>Order Summary</h3>
+                        <div id="checkout-summary">
+                            <!-- Summary loaded dynamically -->
+                        </div>
+                    </section>
+
+                    <button type="submit" id="btn-place-order" class="btn btn-primary btn-block btn-lg">
+                        Place Order
+                    </button>
+                </form>
+            </div>
+
+            <!-- Address Modal (Create/Edit) -->
+            <div id="address-modal" class="modal hidden">
+                <div class="modal-content">
+                    <button class="modal-close">&times;</button>
+                    <h3 id="address-modal-title">New Shipping Address</h3>
+                    <form id="address-form">
+                        <input type="hidden" id="addr-id" value="">
+                        <div class="form-group">
+                            <label>ชื่อผู้รับ *</label>
+                            <input type="text" id="addr-name" placeholder="ชื่อ-นามสกุล" required>
+                        </div>
+                        <div class="form-group">
+                            <label>เบอร์โทรศัพท์ *</label>
+                            <input type="tel" id="addr-phone" placeholder="08X-XXX-XXXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label>ที่อยู่ *</label>
+                            <input type="text" id="addr-street" placeholder="บ้านเลขที่ ซอย ถนน" required>
+                        </div>
+                        <div class="form-group">
+                            <label>จังหวัด *</label>
+                            <select id="addr-province" onchange="App.onProvinceChange(this.value)" required>
+                                <option value="">เลือกจังหวัด</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>อำเภอ/เขต *</label>
+                            <select id="addr-district" onchange="App.onDistrictChange(this.value)" required>
+                                <option value="">-- เลือกจังหวัดก่อน --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>ตำบล/แขวง *</label>
+                            <select id="addr-subdistrict" onchange="App.onSubDistrictChange(this.value)" required>
+                                <option value="">-- เลือกอำเภอก่อน --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>รหัสไปรษณีย์ *</label>
+                            <input type="text" id="addr-zip" placeholder="10XXX" maxlength="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="addr-default">
+                                ตั้งเป็นที่อยู่เริ่มต้น
+                            </label>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary btn-block">บันทึกที่อยู่</button>
+                            <button type="button" id="btn-delete-address" class="btn btn-danger btn-block hidden">ลบที่อยู่นี้</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Orders Page -->
+            <div id="page-orders" class="page hidden">
+                <h2 class="page-title">My Orders</h2>
+
+                <div id="orders-empty" class="empty-state hidden">
+                    <svg viewBox="0 0 24 24" width="64" height="64">
+                        <path fill="#ccc" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/>
+                    </svg>
+                    <p>No orders yet</p>
+                    <button class="btn btn-primary" onclick="App.showPage('products')">Start Shopping</button>
+                </div>
+
+                <div id="orders-list" class="orders-list">
+                    <!-- Orders loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- Order Detail Modal -->
+            <div id="order-modal" class="modal hidden">
+                <div class="modal-content modal-lg">
+                    <button class="modal-close">&times;</button>
+                    <div id="order-detail">
+                        <!-- Order detail loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="page-profile" class="page hidden">
+                <h2 class="page-title">My Profile</h2>
+
+                <section class="profile-section">
+                    <div class="profile-header">
+                        <img id="profile-avatar" class="profile-avatar" src="" alt="">
+                        <div class="profile-info">
+                            <h3 id="profile-name">User</h3>
+                            <p id="profile-phone" class="text-muted">-</p>
+                        </div>
+                        <button id="btn-edit-profile" class="btn btn-sm btn-outline" onclick="App.showEditProfile()">แก้ไข</button>
+                    </div>
+                </section>
+
+                <!-- Edit Profile Form (hidden by default) -->
+                <section id="edit-profile-section" class="profile-section hidden">
+                    <h3 class="section-title">แก้ไขข้อมูลส่วนตัว</h3>
+                    <form id="edit-profile-form" onsubmit="event.preventDefault(); App.saveProfile();">
+                        <div class="form-group">
+                            <label>ชื่อ-นามสกุล *</label>
+                            <input type="text" id="edit-profile-name" placeholder="ชื่อ-นามสกุล" required>
+                        </div>
+                        <div class="form-group">
+                            <label>เบอร์โทรศัพท์ *</label>
+                            <input type="tel" id="edit-profile-phone" placeholder="08X-XXX-XXXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label>อีเมล</label>
+                            <input type="email" id="edit-profile-email" placeholder="email@example.com">
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary">บันทึก</button>
+                            <button type="button" class="btn btn-outline" onclick="App.hideEditProfile()">ยกเลิก</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="profile-section">
+                    <h3 class="section-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                        ที่อยู่จัดส่ง
+                    </h3>
+                    <div id="profile-addresses" class="address-list">
+                        <!-- Addresses loaded dynamically -->
+                    </div>
+                    <button id="btn-add-address" class="btn btn-outline btn-block">+ เพิ่มที่อยู่ใหม่</button>
+                </section>
+
+                <section class="profile-section">
+                    <h3 class="section-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                        </svg>
+                        การแจ้งเตือน
+                    </h3>
+                    <div class="setting-row">
+                        <label>รับการแจ้งเตือนสถานะคำสั่งซื้อ</label>
+                        <input type="checkbox" id="notify-orders" checked>
+                    </div>
+                    <div class="setting-row">
+                        <label>รับโปรโมชั่นและข่าวสาร</label>
+                        <input type="checkbox" id="notify-promotions" checked>
+                    </div>
+                </section>
+
+                <!-- Seller Application Section -->
+                <section id="seller-section" class="profile-section hidden">
+                    <h3 class="section-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="currentColor" d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/>
+                        </svg>
+                        เปิดร้านขายสินค้า
+                    </h3>
+
+                    <!-- Status: Not applied -->
+                    <div id="seller-not-applied">
+                        <p style="color:#666; margin-bottom:12px;">เปิดร้านขายสินค้าบน Marketplace ได้ง่ายๆ โพสต์สินค้าผ่านมือถือ ขายได้ทันที!</p>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label style="font-size:13px; font-weight:600;">ชื่อร้าน (ไม่บังคับ)</label>
+                            <input type="text" id="seller-shop-name" placeholder="เช่น ร้านของฉัน" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px;">
+                        </div>
+                        <button id="btn-apply-seller" class="btn btn-primary btn-block" style="background:#00B900; border:none; padding:14px; font-size:16px; font-weight:600; border-radius:12px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" style="vertical-align:middle; margin-right:6px;">
+                                <path fill="white" d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/>
+                            </svg>
+                            สมัครเป็นผู้ขาย
+                        </button>
+                    </div>
+
+                    <!-- Status: Pending -->
+                    <div id="seller-pending" class="hidden">
+                        <div style="background:#fff8e1; border:1px solid #ffcc02; border-radius:12px; padding:16px; text-align:center;">
+                            <svg viewBox="0 0 24 24" width="40" height="40">
+                                <path fill="#ff9800" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <h4 style="margin:8px 0 4px; color:#e65100;">รอการอนุมัติ</h4>
+                            <p style="color:#666; font-size:13px;">ใบสมัครของคุณกำลังรอการตรวจสอบจากผู้ดูแลระบบ</p>
+                        </div>
+                    </div>
+
+                    <!-- Status: Approved -->
+                    <div id="seller-approved" class="hidden">
+                        <div style="background:#e8f5e9; border:1px solid #4caf50; border-radius:12px; padding:16px; text-align:center;">
+                            <svg viewBox="0 0 24 24" width="40" height="40">
+                                <path fill="#4caf50" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <h4 style="margin:8px 0 4px; color:#2e7d32;">คุณเป็นผู้ขายแล้ว!</h4>
+                            <p id="seller-shop-info" style="color:#666; font-size:13px;"></p>
+                            <button id="btn-open-seller-liff" class="btn btn-primary" style="background:#00B900; border:none; padding:12px 24px; font-size:15px; font-weight:600; border-radius:10px; margin-top:8px;">
+                                เปิดหน้าร้าน Seller
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Status: Denied -->
+                    <div id="seller-denied" class="hidden">
+                        <div style="background:#ffebee; border:1px solid #f44336; border-radius:12px; padding:16px; text-align:center;">
+                            <svg viewBox="0 0 24 24" width="40" height="40">
+                                <path fill="#f44336" d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
+                            </svg>
+                            <h4 style="margin:8px 0 4px; color:#c62828;">ใบสมัครถูกปฏิเสธ</h4>
+                            <p style="color:#666; font-size:13px;">กรุณาติดต่อผู้ดูแลระบบสำหรับข้อมูลเพิ่มเติม</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation (Mobile) -->
+        <nav class="bottom-nav">
+            <button class="bottom-nav-item active" data-page="home">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span>Home</span>
+            </button>
+            <button class="bottom-nav-item" data-page="products">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+                </svg>
+                <span>Products</span>
+            </button>
+            <button class="bottom-nav-item" data-page="cart">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+                <span>Cart</span>
+                <span id="cart-badge-nav" class="badge hidden">0</span>
+            </button>
+            <button class="bottom-nav-item" data-page="orders">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                </svg>
+                <span>Orders</span>
+            </button>
+            <button class="bottom-nav-item" data-page="profile">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span>Profile</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Scripts (v3 cache bust) -->
+    <script src="js/config.js?v=3"></script>
+    <script src="js/thai-address-data.js?v=1"></script>
+    <script src="js/api.js?v=3"></script>
+    <script src="js/app.js?v=7"></script>
+</body>
+</html>

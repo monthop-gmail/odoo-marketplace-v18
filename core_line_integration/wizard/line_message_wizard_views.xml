@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="line_message_wizard_form" model="ir.ui.view">
+        <field name="name">line.message.wizard.form</field>
+        <field name="model">line.message.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Send LINE Message">
+                <group>
+                    <field name="partner_id"/>
+                    <field name="channel_id"/>
+                    <field name="line_user_id"/>
+                    <field name="message_text" widget="text" placeholder="Type your message here..."/>
+                </group>
+                <footer>
+                    <button name="action_send_message" string="Send Message" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_line_message_wizard" model="ir.actions.act_window">
+        <field name="name">Send LINE Message</field>
+        <field name="res_model">line.message.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

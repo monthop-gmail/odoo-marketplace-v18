@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- LINE Marketplace Root Menu -->
+    <menuitem id="menu_line_buyer_root"
+              name="LINE Marketplace"
+              web_icon="core_line_integration,static/description/icon.png"
+              sequence="80"/>
+
+    <!-- Shipping Dashboard Menu (Top Level) -->
+    <menuitem id="menu_shipping_dashboard"
+              name="Shipping Dashboard"
+              parent="menu_line_buyer_root"
+              action="action_shipping_dashboard"
+              sequence="5"/>
+
+    <!-- Orders Today -->
+    <menuitem id="menu_shipping_today"
+              name="Orders Today"
+              parent="menu_line_buyer_root"
+              action="action_shipping_today"
+              sequence="6"/>
+
+    <!-- Members Menu -->
+    <menuitem id="menu_line_members_root"
+              name="Members"
+              parent="menu_line_buyer_root"
+              sequence="20"/>
+
+    <!-- All Members -->
+    <menuitem id="menu_line_all_members"
+              name="All Members"
+              parent="menu_line_members_root"
+              action="line_channel_member_action"
+              sequence="10"/>
+
+    <!-- Reporting Menu -->
+    <menuitem id="menu_line_reporting"
+              name="Reporting"
+              parent="menu_line_buyer_root"
+              sequence="50"/>
+
+    <!-- Notification Log -->
+    <menuitem id="menu_line_notify_log"
+              name="Notification Log"
+              parent="menu_line_reporting"
+              action="line_notify_log_action"
+              sequence="10"/>
+
+    <!-- Configuration Menu -->
+    <menuitem id="menu_line_buyer_config"
+              name="Configuration"
+              parent="menu_line_buyer_root"
+              sequence="100"/>
+
+    <!-- LINE Channels -->
+    <menuitem id="menu_line_channels"
+              name="LINE Channels"
+              parent="menu_line_buyer_config"
+              action="line_channel_action"
+              sequence="10"/>
+
+    <!-- LIFF Apps -->
+    <menuitem id="menu_line_liff"
+              name="LIFF Apps"
+              parent="menu_line_buyer_config"
+              action="line_liff_action"
+              sequence="20"/>
+</odoo>

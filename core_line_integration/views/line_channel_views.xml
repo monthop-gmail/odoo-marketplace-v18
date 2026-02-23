@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- LINE Channel Tree View -->
+    <record id="line_channel_view_tree" model="ir.ui.view">
+        <field name="name">line.channel.tree</field>
+        <field name="model">line.channel</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="channel_id"/>
+                <field name="member_count"/>
+                <field name="seller_id" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- LINE Channel Form View -->
+    <record id="line_channel_view_form" model="ir.ui.view">
+        <field name="name">line.channel.form</field>
+        <field name="model">line.channel</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_test_connection" type="object"
+                            string="Test Connection" class="oe_highlight"
+                            invisible="not channel_access_token"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_members" type="object"
+                                class="oe_stat_button" icon="fa-users">
+                            <field name="member_count" widget="statinfo" string="Members"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g., สหกรณ์การเกษตร ABC"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="General">
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="active" invisible="1"/>
+                            <field name="seller_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="LINE API Credentials">
+                            <field name="channel_id" placeholder="LINE Channel ID"/>
+                            <field name="channel_secret" password="True"/>
+                            <field name="channel_access_token" password="True"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="LIFF Configuration" name="liff">
+                            <group>
+                                <group>
+                                    <field name="liff_id" placeholder="LIFF ID"/>
+                                    <field name="liff_url" widget="url"/>
+                                </group>
+                                <group>
+                                    <field name="rich_menu_id"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Webhook" name="webhook">
+                            <group>
+                                <field name="webhook_url" widget="CopyClipboardChar"/>
+                                <field name="webhook_secret" password="True"/>
+                            </group>
+                            <div class="alert alert-info" role="alert">
+                                <strong>Setup Instructions:</strong>
+                                <ol>
+                                    <li>Go to LINE Developers Console</li>
+                                    <li>Select your Messaging API channel</li>
+                                    <li>Set the Webhook URL to the value shown above</li>
+                                    <li>Enable "Use webhook"</li>
+                                    <li>Verify the webhook</li>
+                                </ol>
+                            </div>
+                        </page>
+
+                        <page string="Notifications" name="notifications">
+                            <group>
+                                <group>
+                                    <field name="auto_welcome_message"/>
+                                    <field name="notify_on_order"/>
+                                    <field name="notify_on_shipping"/>
+                                </group>
+                            </group>
+                            <group string="Welcome Message" invisible="not auto_welcome_message">
+                                <field name="welcome_message" nolabel="1"/>
+                            </group>
+                        </page>
+
+                        <page string="Members" name="members">
+                            <field name="member_ids">
+                                <list>
+                                    <field name="display_name"/>
+                                    <field name="line_user_id"/>
+                                    <field name="partner_id"/>
+                                    <field name="is_following"/>
+                                    <field name="follow_date"/>
+                                    <field name="order_count"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- LINE Channel Kanban View -->
+    <record id="line_channel_view_kanban" model="ir.ui.view">
+        <field name="name">line.channel.kanban</field>
+        <field name="model">line.channel</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="member_count"/>
+                <field name="active"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <div class="o_kanban_record_title">
+                                <field name="name"/>
+                            </div>
+                            <div class="text-muted">
+                                Code: <field name="code"/>
+                            </div>
+                            <div class="mt-2">
+                                <span class="badge bg-primary">
+                                    <i class="fa fa-users"/> <field name="member_count"/> members
+                                </span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- LINE Channel Search View -->
+    <record id="line_channel_view_search" model="ir.ui.view">
+        <field name="name">line.channel.search</field>
+        <field name="model">line.channel</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="seller_id"/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Company" name="company" context="{'group_by': 'company_id'}"/>
+                    <filter string="Seller" name="seller" context="{'group_by': 'seller_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- LINE Channel Action -->
+    <record id="line_channel_action" model="ir.actions.act_window">
+        <field name="name">LINE Channels</field>
+        <field name="res_model">line.channel</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first LINE Channel
+            </p>
+            <p>
+                Each LINE Official Account (OA) is represented as a channel.
+                Configure your LINE Messaging API credentials to enable buyer integration.
+            </p>
+        </field>
+    </record>
+</odoo>

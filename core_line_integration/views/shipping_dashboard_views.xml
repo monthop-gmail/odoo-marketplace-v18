@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Shipping Dashboard Kanban View -->
+    <record id="sale_order_shipping_kanban" model="ir.ui.view">
+        <field name="name">sale.order.shipping.kanban</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="shipping_status" class="o_kanban_mobile"
+                    quick_create="false" records_draggable="true">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="partner_shipping_id"/>
+                <field name="amount_total"/>
+                <field name="date_order"/>
+                <field name="shipping_status"/>
+                <field name="label_printed"/>
+                <field name="tracking_number"/>
+                <field name="shipping_carrier"/>
+                <field name="source_line_channel_id"/>
+                <field name="order_items_summary"/>
+                <progressbar field="shipping_status"
+                             colors='{"pending": "danger", "label_printed": "warning", "packed": "info", "shipped": "success", "delivered": "muted"}'/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click">
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_top mb-2">
+                                    <div class="o_kanban_record_headings">
+                                        <strong class="o_kanban_record_title">
+                                            <field name="name"/>
+                                        </strong>
+                                    </div>
+                                    <strong>
+                                        <field name="amount_total" widget="monetary"/>
+                                    </strong>
+                                </div>
+                                <div class="o_kanban_record_body">
+                                    <div>
+                                        <i class="fa fa-user me-1"/>
+                                        <field name="partner_id"/>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <field name="order_items_summary"/>
+                                    </div>
+                                    <div t-if="record.source_line_channel_id.value" class="text-success small">
+                                        <i class="fa fa-commenting me-1"/>
+                                        <field name="source_line_channel_id"/>
+                                    </div>
+                                </div>
+                                <div class="o_kanban_record_bottom mt-2">
+                                    <div class="oe_kanban_bottom_left">
+                                        <span t-if="record.label_printed.raw_value" class="badge bg-success">
+                                            <i class="fa fa-print"/> พิมพ์แล้ว
+                                        </span>
+                                        <span t-if="record.tracking_number.value" class="badge bg-info ms-1">
+                                            <i class="fa fa-truck"/> <t t-esc="record.tracking_number.value"/>
+                                        </span>
+                                    </div>
+                                    <div class="oe_kanban_bottom_right">
+                                        <field name="date_order" widget="date"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Shipping Dashboard List View -->
+    <record id="sale_order_shipping_list" model="ir.ui.view">
+        <field name="name">sale.order.shipping.list</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <list string="Shipping Dashboard" multi_edit="1"
+                  decoration-danger="shipping_status == 'pending'"
+                  decoration-warning="shipping_status == 'label_printed'"
+                  decoration-info="shipping_status == 'packed'"
+                  decoration-success="shipping_status == 'shipped'">
+                <header>
+                    <button name="action_batch_print_labels" type="object"
+                            string="พิมพ์ใบปะหน้า" class="btn-primary"/>
+                    <button name="%(core_line_integration.action_batch_ship_wizard)d" type="action"
+                            string="ทำเครื่องหมายจัดส่ง" class="btn-secondary"/>
+                </header>
+                <field name="name"/>
+                <field name="date_order"/>
+                <field name="partner_id"/>
+                <field name="partner_shipping_id" string="ที่อยู่จัดส่ง"/>
+                <field name="order_items_summary" string="รายการ"/>
+                <field name="amount_total" sum="Total"/>
+                <field name="source_line_channel_id" optional="show"/>
+                <field name="shipping_status" widget="badge"
+                       decoration-danger="shipping_status == 'pending'"
+                       decoration-warning="shipping_status == 'label_printed'"
+                       decoration-info="shipping_status == 'packed'"
+                       decoration-success="shipping_status in ['shipped', 'delivered']"/>
+                <field name="label_printed" widget="boolean"/>
+                <field name="shipping_carrier" optional="show"/>
+                <field name="tracking_number" optional="show"/>
+                <button name="action_print_label" type="object" icon="fa-print"
+                        title="พิมพ์ใบปะหน้า" invisible="label_printed"/>
+                <button name="action_mark_shipped" type="object" icon="fa-truck"
+                        title="จัดส่ง" invisible="shipping_status in ['shipped', 'delivered']"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Shipping Dashboard Search View -->
+    <record id="sale_order_shipping_search" model="ir.ui.view">
+        <field name="name">sale.order.shipping.search</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <search string="Shipping Dashboard">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="partner_shipping_id"/>
+                <field name="tracking_number"/>
+                <separator/>
+                <filter string="รอดำเนินการ" name="pending"
+                        domain="[('shipping_status', '=', 'pending')]"/>
+                <filter string="พิมพ์ใบปะหน้าแล้ว" name="label_printed"
+                        domain="[('shipping_status', '=', 'label_printed')]"/>
+                <filter string="แพ็คแล้ว" name="packed"
+                        domain="[('shipping_status', '=', 'packed')]"/>
+                <filter string="จัดส่งแล้ว" name="shipped"
+                        domain="[('shipping_status', '=', 'shipped')]"/>
+                <filter string="ส่งถึงแล้ว" name="delivered"
+                        domain="[('shipping_status', '=', 'delivered')]"/>
+                <separator/>
+                <filter string="ยังไม่พิมพ์ใบปะหน้า" name="not_printed"
+                        domain="[('label_printed', '=', False)]"/>
+                <filter string="จาก LINE" name="from_line"
+                        domain="[('source_channel', '=', 'line')]"/>
+                <separator/>
+                <filter string="วันนี้" name="today"
+                        domain="[('date_order', '>=', (context_today()).strftime('%Y-%m-%d')),
+                                 ('date_order', '&lt;', (context_today() + relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                <filter string="สัปดาห์นี้" name="this_week"
+                        domain="[('date_order', '>=', (context_today() - relativedelta(days=context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="สถานะจัดส่ง" name="group_shipping_status"
+                            context="{'group_by': 'shipping_status'}"/>
+                    <filter string="ขนส่ง" name="group_carrier"
+                            context="{'group_by': 'shipping_carrier'}"/>
+                    <filter string="วันที่" name="group_date"
+                            context="{'group_by': 'date_order:day'}"/>
+                    <filter string="LINE Channel" name="group_channel"
+                            context="{'group_by': 'source_line_channel_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Shipping Form View (extends sale order form) -->
+    <record id="sale_order_shipping_form" model="ir.ui.view">
+        <field name="name">sale.order.shipping.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add Shipping tab -->
+            <xpath expr="//page[@name='other_information']" position="after">
+                <page string="Shipping" name="shipping_info">
+                    <group>
+                        <group string="Shipping Status">
+                            <field name="shipping_status" widget="statusbar"
+                                   statusbar_visible="pending,label_printed,packed,shipped,delivered"/>
+                            <field name="shipping_carrier"/>
+                            <field name="tracking_number"/>
+                            <field name="estimated_delivery"/>
+                        </group>
+                        <group string="Fulfillment">
+                            <field name="label_printed"/>
+                            <field name="label_printed_date" invisible="not label_printed"/>
+                            <field name="label_printed_by" invisible="not label_printed"/>
+                            <field name="packed_date"/>
+                            <field name="packed_by"/>
+                            <field name="shipped_date"/>
+                            <field name="shipped_by"/>
+                        </group>
+                    </group>
+                    <group string="Shipping Notes">
+                        <field name="shipping_notes" nolabel="1" colspan="2"/>
+                    </group>
+                    <group string="Shipping Address">
+                        <field name="shipping_address_text" nolabel="1" colspan="2"/>
+                    </group>
+                </page>
+            </xpath>
+            <!-- Add shipping buttons in header -->
+            <xpath expr="//button[@name='action_confirm']" position="after">
+                <button name="action_print_label" type="object"
+                        string="พิมพ์ใบปะหน้า" class="btn-secondary"
+                        invisible="state != 'sale' or label_printed"/>
+                <button name="action_mark_shipped" type="object"
+                        string="จัดส่ง" class="btn-secondary"
+                        invisible="state != 'sale' or shipping_status in ['shipped', 'delivered']"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Shipping Dashboard Action -->
+    <record id="action_shipping_dashboard" model="ir.actions.act_window">
+        <field name="name">Shipping Dashboard</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('state', 'in', ['sale', 'done']), ('shipping_status', '!=', 'delivered')]</field>
+        <field name="context">{
+            'search_default_pending': 1,
+            'search_default_label_printed': 1,
+            'search_default_packed': 1,
+        }</field>
+        <field name="search_view_id" ref="sale_order_shipping_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ไม่มีคำสั่งซื้อที่รอจัดส่ง
+            </p>
+            <p>คำสั่งซื้อที่ยืนยันแล้วจะปรากฏที่นี่</p>
+        </field>
+    </record>
+    <record id="action_shipping_dashboard_view_kanban" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="sale_order_shipping_kanban"/>
+        <field name="act_window_id" ref="action_shipping_dashboard"/>
+    </record>
+    <record id="action_shipping_dashboard_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="sale_order_shipping_list"/>
+        <field name="act_window_id" ref="action_shipping_dashboard"/>
+    </record>
+
+    <!-- Today's Orders Action -->
+    <record id="action_shipping_today" model="ir.actions.act_window">
+        <field name="name">Orders Today</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[
+            ('state', 'in', ['sale', 'done']),
+            ('date_order', '>=', (context_today()).strftime('%Y-%m-%d')),
+            ('date_order', '&lt;', (context_today() + relativedelta(days=1)).strftime('%Y-%m-%d'))
+        ]</field>
+        <field name="context">{'search_default_not_printed': 1}</field>
+        <field name="search_view_id" ref="sale_order_shipping_search"/>
+    </record>
+    <record id="action_shipping_today_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="sale_order_shipping_list"/>
+        <field name="act_window_id" ref="action_shipping_today"/>
+    </record>
+</odoo>

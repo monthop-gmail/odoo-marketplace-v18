@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Customer Support - LINE LIFF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Sarabun', sans-serif; }
+        .support-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
+        .support-text { color: #0ea5e9; }
+        .chat-bubble-user {
+            background: #0ea5e9;
+            color: white;
+            border-radius: 20px 20px 4px 20px;
+        }
+        .chat-bubble-agent {
+            background: #f3f4f6;
+            border-radius: 20px 20px 20px 4px;
+        }
+        .typing-indicator span {
+            animation: typing 1.4s infinite;
+            animation-fill-mode: both;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0% { opacity: 0.4; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-4px); }
+            100% { opacity: 0.4; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading Support...</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="hidden pb-20">
+        <!-- Header -->
+        <header class="support-gradient text-white p-4 sticky top-0 z-40 shadow-md">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-headset text-2xl"></i>
+                    <div>
+                        <p class="font-bold text-lg">Customer Support</p>
+                        <p class="text-xs opacity-80" id="support-status">
+                            <span class="inline-block w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                            Online - Ready to help
+                        </p>
+                    </div>
+                </div>
+                <button onclick="showMenu()" class="p-2">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Support Home Page -->
+        <div id="page-home" class="page p-4">
+            <!-- Quick Actions -->
+            <h2 class="text-lg font-semibold mb-3">How can we help you?</h2>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button onclick="startChat('order')" class="bg-white rounded-xl p-4 shadow text-left">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-box text-blue-500"></i>
+                    </div>
+                    <p class="font-medium">Order Issues</p>
+                    <p class="text-xs text-gray-500">Track, cancel, modify</p>
+                </button>
+                <button onclick="startChat('payment')" class="bg-white rounded-xl p-4 shadow text-left">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-credit-card text-green-500"></i>
+                    </div>
+                    <p class="font-medium">Payment</p>
+                    <p class="text-xs text-gray-500">Refunds, billing</p>
+                </button>
+                <button onclick="startChat('product')" class="bg-white rounded-xl p-4 shadow text-left">
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-shopping-bag text-purple-500"></i>
+                    </div>
+                    <p class="font-medium">Products</p>
+                    <p class="text-xs text-gray-500">Info, availability</p>
+                </button>
+                <button onclick="startChat('other')" class="bg-white rounded-xl p-4 shadow text-left">
+                    <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-question-circle text-orange-500"></i>
+                    </div>
+                    <p class="font-medium">Other</p>
+                    <p class="text-xs text-gray-500">General inquiry</p>
+                </button>
+            </div>
+
+            <!-- Recent Tickets -->
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-lg font-semibold">Recent Tickets</h2>
+                <button onclick="showPage('tickets')" class="text-sky-500 text-sm">View All</button>
+            </div>
+            <div id="recent-tickets" class="space-y-3 mb-6">
+                <!-- Recent tickets loaded here -->
+            </div>
+
+            <!-- FAQ Section -->
+            <h2 class="text-lg font-semibold mb-3">Frequently Asked Questions</h2>
+            <div id="faq-list" class="space-y-2">
+                <!-- FAQ loaded here -->
+            </div>
+        </div>
+
+        <!-- Chat Page -->
+        <div id="page-chat" class="page hidden flex flex-col h-[calc(100vh-140px)]">
+            <!-- Chat Header -->
+            <div class="bg-white border-b p-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <button onclick="showPage('home')" class="text-gray-600">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-sky-500"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">Support Agent</p>
+                        <p class="text-xs text-green-500">Online</p>
+                    </div>
+                </div>
+                <button onclick="endChat()" class="text-red-500 text-sm">End Chat</button>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
+                <!-- Messages loaded here -->
+            </div>
+
+            <!-- Quick Replies -->
+            <div id="quick-replies" class="bg-white border-t p-2 flex space-x-2 overflow-x-auto">
+                <button onclick="sendQuickReply('track')" class="px-3 py-1 bg-gray-100 rounded-full text-sm whitespace-nowrap">
+                    Track my order
+                </button>
+                <button onclick="sendQuickReply('refund')" class="px-3 py-1 bg-gray-100 rounded-full text-sm whitespace-nowrap">
+                    Request refund
+                </button>
+                <button onclick="sendQuickReply('agent')" class="px-3 py-1 bg-gray-100 rounded-full text-sm whitespace-nowrap">
+                    Talk to human
+                </button>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="bg-white border-t p-3 flex items-center space-x-2">
+                <button onclick="attachFile()" class="text-gray-400 p-2">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="text" id="chat-input" placeholder="Type your message..."
+                       class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500"
+                       onkeypress="handleChatKeypress(event)">
+                <button onclick="sendMessage()" class="support-gradient text-white p-2 rounded-full w-10 h-10">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tickets Page -->
+        <div id="page-tickets" class="page hidden p-4">
+            <div class="flex items-center mb-4">
+                <button onclick="showPage('home')" class="mr-3">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <h2 class="text-lg font-semibold">My Tickets</h2>
+            </div>
+
+            <!-- Ticket Filters -->
+            <div class="flex space-x-2 mb-4">
+                <button class="ticket-filter active px-3 py-1 rounded-full text-sm" data-status="all">All</button>
+                <button class="ticket-filter px-3 py-1 rounded-full text-sm" data-status="open">Open</button>
+                <button class="ticket-filter px-3 py-1 rounded-full text-sm" data-status="pending">Pending</button>
+                <button class="ticket-filter px-3 py-1 rounded-full text-sm" data-status="closed">Closed</button>
+            </div>
+
+            <div id="tickets-list" class="space-y-3">
+                <!-- Tickets loaded here -->
+            </div>
+        </div>
+
+        <!-- New Ticket Page -->
+        <div id="page-new-ticket" class="page hidden p-4">
+            <div class="flex items-center mb-4">
+                <button onclick="showPage('home')" class="mr-3">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <h2 class="text-lg font-semibold">Create Ticket</h2>
+            </div>
+
+            <form id="ticket-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Category</label>
+                    <select id="ticket-category" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="">Select category</option>
+                        <option value="order">Order Issues</option>
+                        <option value="payment">Payment & Refunds</option>
+                        <option value="product">Product Inquiry</option>
+                        <option value="shipping">Shipping</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Order Number (Optional)</label>
+                    <input type="text" id="ticket-order" placeholder="e.g., SO12345"
+                           class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Subject</label>
+                    <input type="text" id="ticket-subject" placeholder="Brief description"
+                           class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Description</label>
+                    <textarea id="ticket-description" rows="4" placeholder="Describe your issue in detail..."
+                              class="w-full px-4 py-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-sky-500" required></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Attachments</label>
+                    <div class="border-2 border-dashed rounded-lg p-4 text-center">
+                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-sm text-gray-500">Tap to upload images</p>
+                        <input type="file" id="ticket-files" multiple accept="image/*" class="hidden">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full support-gradient text-white py-3 rounded-xl font-medium">
+                    Submit Ticket
+                </button>
+            </form>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
+            <div class="flex justify-around py-2">
+                <button class="nav-btn active flex flex-col items-center p-2" data-page="home">
+                    <i class="fas fa-home text-xl"></i>
+                    <span class="text-xs mt-1">Home</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" onclick="startChat('general')">
+                    <i class="fas fa-comments text-xl"></i>
+                    <span class="text-xs mt-1">Live Chat</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" onclick="showPage('new-ticket')">
+                    <i class="fas fa-plus-circle text-xl"></i>
+                    <span class="text-xs mt-1">New Ticket</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center p-2" data-page="tickets">
+                    <i class="fas fa-ticket-alt text-xl"></i>
+                    <span class="text-xs mt-1">Tickets</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            LIFF_ID: '',
+            API_BASE: window.location.origin,
+            CHANNEL_CODE: 'demo_coop',
+        };
+
+        let lineProfile = null;
+        let accessToken = null;
+        let currentChatTopic = null;
+
+        // Initialize LIFF
+        async function initLiff() {
+            try {
+                const liffId = new URLSearchParams(window.location.search).get('liffId') || CONFIG.LIFF_ID;
+
+                if (liffId) {
+                    await liff.init({ liffId });
+
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                        return;
+                    }
+
+                    lineProfile = await liff.getProfile();
+                    accessToken = liff.getAccessToken();
+                }
+
+                loadRecentTickets();
+                loadFAQ();
+
+            } catch (error) {
+                console.error('LIFF init error:', error);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+            }
+        }
+
+        // Load Recent Tickets
+        function loadRecentTickets() {
+            const tickets = [
+                { id: 'TK001', subject: 'Order not received', status: 'open', date: '2 hours ago' },
+                { id: 'TK002', subject: 'Refund request', status: 'pending', date: '1 day ago' },
+            ];
+
+            const container = document.getElementById('recent-tickets');
+            container.innerHTML = tickets.map(ticket => `
+                <div class="bg-white rounded-xl p-4 shadow flex items-center justify-between" onclick="viewTicket('${ticket.id}')">
+                    <div>
+                        <p class="font-medium">${ticket.subject}</p>
+                        <p class="text-xs text-gray-500">${ticket.id} • ${ticket.date}</p>
+                    </div>
+                    <span class="px-2 py-1 rounded-full text-xs ${getStatusClass(ticket.status)}">${ticket.status}</span>
+                </div>
+            `).join('') || '<p class="text-center text-gray-500 py-4">No recent tickets</p>';
+        }
+
+        // Load FAQ
+        function loadFAQ() {
+            const faqs = [
+                { q: 'How do I track my order?', a: 'Go to Orders page and click on your order to see tracking info.' },
+                { q: 'How long does shipping take?', a: 'Standard shipping takes 3-5 business days.' },
+                { q: 'Can I cancel my order?', a: 'You can cancel within 1 hour of placing the order.' },
+                { q: 'How do I request a refund?', a: 'Contact support or create a ticket with your order number.' },
+            ];
+
+            const container = document.getElementById('faq-list');
+            container.innerHTML = faqs.map((faq, i) => `
+                <div class="bg-white rounded-xl shadow overflow-hidden">
+                    <button class="w-full p-4 text-left flex justify-between items-center" onclick="toggleFAQ(${i})">
+                        <span class="font-medium">${faq.q}</span>
+                        <i class="fas fa-chevron-down text-gray-400 faq-icon-${i} transition-transform"></i>
+                    </button>
+                    <div class="faq-answer-${i} hidden px-4 pb-4">
+                        <p class="text-sm text-gray-600">${faq.a}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleFAQ(index) {
+            const answer = document.querySelector(`.faq-answer-${index}`);
+            const icon = document.querySelector(`.faq-icon-${index}`);
+            answer.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        function getStatusClass(status) {
+            const classes = {
+                'open': 'bg-blue-100 text-blue-800',
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'closed': 'bg-gray-100 text-gray-800',
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        // Chat Functions
+        function startChat(topic) {
+            currentChatTopic = topic;
+            showPage('chat');
+            initChat(topic);
+        }
+
+        function initChat(topic) {
+            const messages = document.getElementById('chat-messages');
+            messages.innerHTML = '';
+
+            // Welcome message
+            addBotMessage(`Hello! 👋 I'm here to help with your ${topic} inquiry. How can I assist you today?`);
+
+            // Topic specific prompts
+            if (topic === 'order') {
+                setTimeout(() => {
+                    addBotMessage('Please provide your order number so I can look it up for you.');
+                }, 1000);
+            }
+        }
+
+        function addBotMessage(text) {
+            const messages = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'flex items-start space-x-2';
+            div.innerHTML = `
+                <div class="w-8 h-8 bg-sky-100 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <i class="fas fa-robot text-sky-500 text-sm"></i>
+                </div>
+                <div class="chat-bubble-agent px-4 py-2 max-w-[80%]">
+                    <p class="text-sm">${text}</p>
+                </div>
+            `;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function addUserMessage(text) {
+            const messages = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'flex items-end justify-end space-x-2';
+            div.innerHTML = `
+                <div class="chat-bubble-user px-4 py-2 max-w-[80%]">
+                    <p class="text-sm">${text}</p>
+                </div>
+            `;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function showTyping() {
+            const messages = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.id = 'typing-indicator';
+            div.className = 'flex items-start space-x-2';
+            div.innerHTML = `
+                <div class="w-8 h-8 bg-sky-100 rounded-full flex-shrink-0 flex items-center justify-center">
+                    <i class="fas fa-robot text-sky-500 text-sm"></i>
+                </div>
+                <div class="chat-bubble-agent px-4 py-3">
+                    <div class="typing-indicator flex space-x-1">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                    </div>
+                </div>
+            `;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addUserMessage(text);
+            input.value = '';
+
+            // Simulate bot response
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                processBotResponse(text);
+            }, 1500);
+        }
+
+        function processBotResponse(userText) {
+            const lowerText = userText.toLowerCase();
+
+            if (lowerText.includes('order') || lowerText.includes('so')) {
+                addBotMessage('I found your order. It\'s currently being processed and will be shipped within 24 hours.');
+            } else if (lowerText.includes('refund')) {
+                addBotMessage('I can help with your refund request. Your refund will be processed within 3-5 business days.');
+            } else if (lowerText.includes('human') || lowerText.includes('agent')) {
+                addBotMessage('I\'ll connect you with a human agent. Please wait a moment...');
+                setTimeout(() => {
+                    addBotMessage('A support agent will be with you shortly. Average wait time: 2 minutes.');
+                }, 2000);
+            } else {
+                addBotMessage('I understand. Let me help you with that. Could you provide more details?');
+            }
+        }
+
+        function sendQuickReply(type) {
+            const messages = {
+                'track': 'I want to track my order',
+                'refund': 'I want to request a refund',
+                'agent': 'I want to talk to a human agent',
+            };
+            document.getElementById('chat-input').value = messages[type];
+            sendMessage();
+        }
+
+        function handleChatKeypress(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function endChat() {
+            if (confirm('Are you sure you want to end this chat?')) {
+                showPage('home');
+            }
+        }
+
+        function attachFile() {
+            alert('File attachment feature');
+        }
+
+        // Navigation
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`page-${pageName}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.page === pageName);
+                btn.classList.toggle('support-text', btn.dataset.page === pageName);
+            });
+
+            if (pageName === 'tickets') {
+                loadAllTickets();
+            }
+        }
+
+        function loadAllTickets() {
+            const tickets = [
+                { id: 'TK001', subject: 'Order not received', status: 'open', date: '2 hours ago' },
+                { id: 'TK002', subject: 'Refund request', status: 'pending', date: '1 day ago' },
+                { id: 'TK003', subject: 'Wrong item received', status: 'closed', date: '3 days ago' },
+            ];
+
+            const container = document.getElementById('tickets-list');
+            container.innerHTML = tickets.map(ticket => `
+                <div class="bg-white rounded-xl p-4 shadow" onclick="viewTicket('${ticket.id}')">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-medium">${ticket.subject}</p>
+                            <p class="text-xs text-gray-500">${ticket.id}</p>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs ${getStatusClass(ticket.status)}">${ticket.status}</span>
+                    </div>
+                    <p class="text-xs text-gray-400">${ticket.date}</p>
+                </div>
+            `).join('');
+        }
+
+        function viewTicket(id) {
+            alert(`Viewing ticket: ${id}`);
+        }
+
+        function showMenu() {
+            alert('Support menu');
+        }
+
+        // Form submission
+        document.getElementById('ticket-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Ticket submitted successfully!');
+            showPage('home');
+        });
+
+        // Nav button listeners
+        document.querySelectorAll('.nav-btn[data-page]').forEach(btn => {
+            btn.addEventListener('click', () => showPage(btn.dataset.page));
+        });
+
+        // Ticket filter listeners
+        document.querySelectorAll('.ticket-filter').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.ticket-filter').forEach(b => {
+                    b.classList.remove('active', 'support-gradient', 'text-white');
+                    b.classList.add('bg-gray-200');
+                });
+                btn.classList.add('active', 'support-gradient', 'text-white');
+                btn.classList.remove('bg-gray-200');
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', initLiff);
+    </script>
+</body>
+</html>

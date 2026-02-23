@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- LINE Marketplace Module Category -->
+        <record id="module_category_line_buyer" model="ir.module.category">
+            <field name="name">LINE Marketplace</field>
+            <field name="description">LINE OA integration for marketplace (buyers, sellers, admins)</field>
+            <field name="sequence">50</field>
+        </record>
+
+        <!-- LINE Channel Manager Group -->
+        <record id="group_line_channel_manager" model="res.groups">
+            <field name="name">LINE Channel Manager</field>
+            <field name="category_id" ref="module_category_line_buyer"/>
+            <field name="comment">Can manage LINE channels and view all members</field>
+        </record>
+
+        <!-- LINE Channel Admin Group (inherits Manager) -->
+        <record id="group_line_channel_admin" model="res.groups">
+            <field name="name">LINE Channel Administrator</field>
+            <field name="category_id" ref="module_category_line_buyer"/>
+            <field name="implied_ids" eval="[(4, ref('group_line_channel_manager'))]"/>
+            <field name="comment">Full access to LINE channel configuration</field>
+        </record>
+
+        <!-- Record Rules -->
+
+        <!-- LINE Channel: Manager can see all -->
+        <record id="line_channel_rule_manager" model="ir.rule">
+            <field name="name">LINE Channel: Manager sees all</field>
+            <field name="model_id" ref="model_line_channel"/>
+            <field name="groups" eval="[(4, ref('group_line_channel_manager'))]"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- LINE Channel: Admin has full access -->
+        <record id="line_channel_rule_admin" model="ir.rule">
+            <field name="name">LINE Channel: Admin full access</field>
+            <field name="model_id" ref="model_line_channel"/>
+            <field name="groups" eval="[(4, ref('group_line_channel_admin'))]"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>
+
+        <!-- LINE Channel Member: Manager can see all -->
+        <record id="line_channel_member_rule_manager" model="ir.rule">
+            <field name="name">LINE Channel Member: Manager sees all</field>
+            <field name="model_id" ref="model_line_channel_member"/>
+            <field name="groups" eval="[(4, ref('group_line_channel_manager'))]"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- LINE Notify Log: Manager can view -->
+        <record id="line_notify_log_rule_manager" model="ir.rule">
+            <field name="name">LINE Notify Log: Manager can view</field>
+            <field name="model_id" ref="model_line_notify_log"/>
+            <field name="groups" eval="[(4, ref('group_line_channel_manager'))]"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Wishlist: user sees only own records via member partner -->
+        <record id="line_wishlist_rule_user" model="ir.rule">
+            <field name="name">LINE Wishlist: user sees own records</field>
+            <field name="model_id" ref="model_line_wishlist"/>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="domain_force">[('member_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Compare List: user sees only own records -->
+        <record id="line_compare_list_rule_user" model="ir.rule">
+            <field name="name">LINE Compare List: user sees own records</field>
+            <field name="model_id" ref="model_line_compare_list"/>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="domain_force">[('member_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Compare Item: user sees only own records (via list) -->
+        <record id="line_compare_item_rule_user" model="ir.rule">
+            <field name="name">LINE Compare Item: user sees own records</field>
+            <field name="model_id" ref="model_line_compare_item"/>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+            <field name="domain_force">[('compare_list_id.member_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+    </data>
+</odoo>

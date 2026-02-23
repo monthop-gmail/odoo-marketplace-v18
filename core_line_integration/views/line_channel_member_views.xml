@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- LINE Channel Member Tree View -->
+    <record id="line_channel_member_view_tree" model="ir.ui.view">
+        <field name="name">line.channel.member.tree</field>
+        <field name="model">line.channel.member</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="display_name"/>
+                <field name="channel_id"/>
+                <field name="line_user_id"/>
+                <field name="partner_id"/>
+                <field name="member_type" optional="show"/>
+                <field name="registration_state" widget="badge"
+                       decoration-info="registration_state == 'new'"
+                       decoration-warning="registration_state == 'profile_pending'"
+                       decoration-success="registration_state == 'verified'"/>
+                <field name="is_following" widget="boolean"/>
+                <field name="follow_date"/>
+                <field name="order_count"/>
+                <field name="total_spent" widget="monetary"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- LINE Channel Member Form View -->
+    <record id="line_channel_member_view_form" model="ir.ui.view">
+        <field name="name">line.channel.member.form</field>
+        <field name="model">line.channel.member</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_create_partner" type="object"
+                            string="Create Contact" class="oe_highlight"
+                            invisible="partner_id"/>
+                    <button name="action_view_orders" type="object"
+                            string="View Orders"
+                            invisible="not partner_id"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_orders" type="object"
+                                class="oe_stat_button" icon="fa-shopping-cart"
+                                invisible="not partner_id">
+                            <field name="order_count" widget="statinfo" string="Orders"/>
+                        </button>
+                    </div>
+
+                    <widget name="web_ribbon" title="Unfollowed" bg_color="text-bg-secondary"
+                            invisible="is_following"/>
+
+                    <field name="picture_url" widget="image_url" class="oe_avatar"
+                           options="{'size': [90, 90]}"/>
+
+                    <div class="oe_title">
+                        <label for="display_name"/>
+                        <h1>
+                            <field name="display_name" placeholder="LINE Display Name"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="LINE Information">
+                            <field name="line_user_id"/>
+                            <field name="channel_id"/>
+                            <field name="status_message"/>
+                        </group>
+                        <group string="Status">
+                            <field name="member_type"/>
+                            <field name="registration_state"/>
+                            <field name="is_following"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="Linked Contact">
+                            <field name="partner_id"/>
+                            <field name="total_spent" widget="monetary"/>
+                        </group>
+                        <group string="Activity">
+                            <field name="follow_date"/>
+                            <field name="unfollow_date" invisible="is_following"/>
+                            <field name="last_message_date"/>
+                            <field name="last_activity_date"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Notes" name="notes">
+                            <field name="notes" placeholder="Internal notes about this member..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- LINE Channel Member Kanban View -->
+    <record id="line_channel_member_view_kanban" model="ir.ui.view">
+        <field name="name">line.channel.member.kanban</field>
+        <field name="model">line.channel.member</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="display_name"/>
+                <field name="picture_url"/>
+                <field name="channel_id"/>
+                <field name="is_following"/>
+                <field name="order_count"/>
+                <templates>
+                    <t t-name="card">
+                        <aside>
+                            <img t-att-src="record.picture_url.raw_value or '/web/static/img/placeholder.png'"
+                                 class="rounded" style="width: 40px; height: 40px; object-fit: cover;"/>
+                        </aside>
+                        <main>
+                            <div class="o_kanban_record_title">
+                                <field name="display_name"/>
+                                <span t-if="!record.is_following.raw_value"
+                                      class="badge bg-secondary ms-1">Unfollowed</span>
+                            </div>
+                            <div class="text-muted">
+                                <field name="channel_id"/>
+                            </div>
+                            <div class="mt-1" t-if="record.order_count.raw_value > 0">
+                                <span class="badge bg-info">
+                                    <i class="fa fa-shopping-cart"/> <field name="order_count"/> orders
+                                </span>
+                            </div>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- LINE Channel Member Search View -->
+    <record id="line_channel_member_view_search" model="ir.ui.view">
+        <field name="name">line.channel.member.search</field>
+        <field name="model">line.channel.member</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="display_name"/>
+                <field name="line_user_id"/>
+                <field name="channel_id"/>
+                <field name="partner_id"/>
+                <filter string="Following" name="following" domain="[('is_following', '=', True)]"/>
+                <filter string="Unfollowed" name="unfollowed" domain="[('is_following', '=', False)]"/>
+                <separator/>
+                <filter string="Has Contact" name="has_partner" domain="[('partner_id', '!=', False)]"/>
+                <filter string="No Contact" name="no_partner" domain="[('partner_id', '=', False)]"/>
+                <separator/>
+                <filter string="Buyers" name="buyers" domain="[('member_type', '=', 'buyer')]"/>
+                <filter string="Verified" name="verified" domain="[('registration_state', '=', 'verified')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Channel" name="channel" context="{'group_by': 'channel_id'}"/>
+                    <filter string="Member Type" name="member_type" context="{'group_by': 'member_type'}"/>
+                    <filter string="Status" name="status" context="{'group_by': 'registration_state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- LINE Channel Member Action -->
+    <record id="line_channel_member_action" model="ir.actions.act_window">
+        <field name="name">LINE Members</field>
+        <field name="res_model">line.channel.member</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'search_default_following': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No LINE members yet
+            </p>
+            <p>
+                Members are automatically created when users follow your LINE OA
+                or interact via LIFF.
+            </p>
+        </field>
+    </record>
+
+    <!-- LINE Notify Log Views -->
+    <record id="line_notify_log_view_tree" model="ir.ui.view">
+        <field name="name">line.notify.log.tree</field>
+        <field name="model">line.notify.log</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="create_date"/>
+                <field name="channel_id"/>
+                <field name="partner_id"/>
+                <field name="notify_type"/>
+                <field name="message" widget="text"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'pending'"
+                       decoration-success="state in ['sent', 'delivered']"
+                       decoration-danger="state == 'failed'"/>
+                <field name="sent_date"/>
+                <field name="retry_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="line_notify_log_view_form" model="ir.ui.view">
+        <field name="name">line.notify.log.form</field>
+        <field name="model">line.notify.log</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <button name="action_send" type="object" string="Send"
+                            class="oe_highlight" invisible="state != 'pending'"/>
+                    <button name="action_retry" type="object" string="Retry"
+                            invisible="state != 'failed'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="channel_id"/>
+                            <field name="partner_id"/>
+                            <field name="line_user_id"/>
+                            <field name="notify_type"/>
+                        </group>
+                        <group>
+                            <field name="message_type"/>
+                            <field name="sent_date"/>
+                            <field name="retry_count"/>
+                            <field name="reference_name" invisible="not reference_model"/>
+                        </group>
+                    </group>
+                    <group string="Message">
+                        <field name="message" nolabel="1"/>
+                    </group>
+                    <group string="Error" invisible="not error_message">
+                        <field name="error_message" nolabel="1"/>
+                    </group>
+                    <group string="API Response" invisible="not api_response">
+                        <field name="api_response" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="line_notify_log_action" model="ir.actions.act_window">
+        <field name="name">Notification Log</field>
+        <field name="res_model">line.notify.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No notifications yet
+            </p>
+            <p>
+                LINE notifications will appear here when orders are placed
+                or shipping updates are sent.
+            </p>
+        </field>
+    </record>
+</odoo>

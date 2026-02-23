@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Demo LINE Channel for Testing -->
+        <record id="demo_line_channel" model="line.channel">
+            <field name="name">Demo Cooperative Store</field>
+            <field name="code">demo_coop</field>
+            <field name="sequence">1</field>
+            <field name="active">True</field>
+            <field name="auto_welcome_message">True</field>
+            <field name="welcome_message">ยินดีต้อนรับสู่ร้านค้าสหกรณ์! 🛒
+กดเมนูด้านล่างเพื่อเริ่มช้อปปิ้ง
+หากมีคำถามสามารถพิมพ์สอบถามได้เลยครับ</field>
+            <field name="notify_on_order">True</field>
+            <field name="notify_on_shipping">True</field>
+        </record>
+
+        <!-- Scheduled Action for Processing Pending Notifications -->
+        <record id="ir_cron_process_line_notifications" model="ir.cron">
+            <field name="name">LINE: Process Pending Notifications</field>
+            <field name="model_id" ref="model_line_notify_log"/>
+            <field name="state">code</field>
+            <field name="code">model.process_pending_notifications()</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="active">False</field>
+        </record>
+    </data>
+</odoo>

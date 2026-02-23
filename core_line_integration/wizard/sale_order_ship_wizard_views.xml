@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Ship Order Wizard View -->
+    <record id="sale_order_ship_wizard_form" model="ir.ui.view">
+        <field name="name">sale.order.ship.wizard.form</field>
+        <field name="model">sale.order.ship.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Mark as Shipped">
+                <group>
+                    <field name="order_id" readonly="1"/>
+                    <field name="shipping_carrier"/>
+                    <field name="tracking_number"
+                           placeholder="Enter tracking number from carrier"/>
+                    <field name="send_notification"/>
+                    <field name="notes" placeholder="Additional notes for this shipment..."/>
+                </group>
+                <footer>
+                    <button name="action_confirm_shipping" type="object"
+                            string="Confirm Shipping" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Batch Ship Wizard View -->
+    <record id="sale_order_batch_ship_wizard_form" model="ir.ui.view">
+        <field name="name">sale.order.batch.ship.wizard.form</field>
+        <field name="model">sale.order.batch.ship.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Batch Mark as Shipped">
+                <group>
+                    <field name="order_count" readonly="1"/>
+                    <field name="shipping_carrier"/>
+                    <field name="send_notification"/>
+                </group>
+                <group string="Selected Orders">
+                    <field name="order_ids" nolabel="1" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="partner_id"/>
+                            <field name="amount_total"/>
+                        </list>
+                    </field>
+                </group>
+                <footer>
+                    <button name="action_confirm_batch_shipping" type="object"
+                            string="Confirm All" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Batch Ship Wizard Action -->
+    <record id="action_batch_ship_wizard" model="ir.actions.act_window">
+        <field name="name">Batch Ship Orders</field>
+        <field name="res_model">sale.order.batch.ship.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_view_types">list</field>
+    </record>
+</odoo>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend Sale Order Form with LINE fields -->
+    <record id="sale_order_view_form_inherit_line" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.line.buyer</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add LINE source info in Other Info tab -->
+            <xpath expr="//page[@name='other_information']//group[@name='sale_info']" position="inside">
+                <field name="source_channel"/>
+                <field name="source_line_channel_id"
+                       invisible="source_channel != 'line'"/>
+                <field name="line_session_id" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add LINE filters to Sale Order Search -->
+    <record id="sale_order_view_search_inherit_line" model="ir.ui.view">
+        <field name="name">sale.order.search.inherit.line.buyer</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.sale_order_view_search_inherit_sale"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='my_sale_orders_filter']" position="after">
+                <separator/>
+                <filter string="From LINE" name="from_line"
+                        domain="[('source_channel', '=', 'line')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Source Channel" name="group_source"
+                        context="{'group_by': 'source_channel'}"/>
+                <filter string="LINE Channel" name="group_line_channel"
+                        context="{'group_by': 'source_line_channel_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add LINE columns to Sale Order List -->
+    <record id="sale_order_view_tree_inherit_line" model="ir.ui.view">
+        <field name="name">sale.order.tree.inherit.line.buyer</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="source_channel" optional="hide"/>
+                <field name="source_line_channel_id" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

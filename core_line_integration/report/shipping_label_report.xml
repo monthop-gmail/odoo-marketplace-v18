@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- A6 Paper Format for Labels (defined first for reference) -->
+    <record id="paperformat_shipping_label" model="report.paperformat">
+        <field name="name">Shipping Label (A6)</field>
+        <field name="default" eval="False"/>
+        <field name="format">custom</field>
+        <field name="page_height">148</field>
+        <field name="page_width">105</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">5</field>
+        <field name="margin_bottom">5</field>
+        <field name="margin_left">5</field>
+        <field name="margin_right">5</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <!-- A4 Paper Format (4 labels per page) -->
+    <record id="paperformat_shipping_label_a4" model="report.paperformat">
+        <field name="name">Shipping Label (A4 - 4 per page)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <!-- Shipping Label Report Action -->
+    <record id="action_report_shipping_label" model="ir.actions.report">
+        <field name="name">Shipping Label</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">core_line_integration.report_shipping_label</field>
+        <field name="report_file">core_line_integration.report_shipping_label</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_shipping_label"/>
+    </record>
+
+    <!-- Multiple Labels on A4 (for batch printing) -->
+    <record id="action_report_shipping_label_a4" model="ir.actions.report">
+        <field name="name">Shipping Labels (A4)</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">core_line_integration.report_shipping_labels_a4</field>
+        <field name="report_file">core_line_integration.report_shipping_labels_a4</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_shipping_label_a4"/>
+    </record>
+
+    <!-- Shipping Label Template -->
+    <template id="report_shipping_label">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="order">
+                <t t-call="core_line_integration.report_shipping_label_document"/>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_shipping_label_document">
+        <div class="page" style="font-family: 'Sarabun', Arial, sans-serif; font-size: 11pt;">
+            <!-- Label Container -->
+            <div style="border: 2px solid #000; padding: 10px; height: 130mm; position: relative;">
+
+                <!-- Header with Logo/Company -->
+                <div style="border-bottom: 1px dashed #ccc; padding-bottom: 8px; margin-bottom: 10px;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="width: 60%;">
+                                <strong style="font-size: 14pt;">
+                                    <t t-if="order.source_line_channel_id">
+                                        <t t-esc="order.source_line_channel_id.name"/>
+                                    </t>
+                                    <t t-else="">
+                                        <t t-esc="order.company_id.name"/>
+                                    </t>
+                                </strong>
+                            </td>
+                            <td style="width: 40%; text-align: right;">
+                                <strong style="font-size: 16pt; color: #00B900;">
+                                    <t t-esc="order.name"/>
+                                </strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Recipient (TO) -->
+                <div style="margin-bottom: 15px;">
+                    <div style="background: #f0f0f0; padding: 3px 8px; margin-bottom: 5px;">
+                        <strong>ผู้รับ (TO)</strong>
+                    </div>
+                    <div style="padding-left: 10px;">
+                        <div style="font-size: 14pt; font-weight: bold; margin-bottom: 5px;">
+                            <t t-esc="order.partner_shipping_id.name"/>
+                        </div>
+                        <div style="margin-bottom: 3px;">
+                            <i class="fa fa-phone" style="width: 15px;"/>
+                            <t t-esc="order.partner_shipping_id.phone or order.partner_shipping_id.mobile or '-'"/>
+                        </div>
+                        <div style="line-height: 1.4;">
+                            <t t-if="order.partner_shipping_id.street">
+                                <t t-esc="order.partner_shipping_id.street"/><br/>
+                            </t>
+                            <t t-if="order.partner_shipping_id.street2">
+                                <t t-esc="order.partner_shipping_id.street2"/><br/>
+                            </t>
+                            <t t-if="order.partner_shipping_id.city">
+                                <t t-esc="order.partner_shipping_id.city"/>
+                            </t>
+                            <t t-if="order.partner_shipping_id.state_id">
+                                <t t-esc="order.partner_shipping_id.state_id.name"/>
+                            </t>
+                            <t t-if="order.partner_shipping_id.zip">
+                                <strong style="font-size: 14pt; color: #c00;">
+                                    <t t-esc="order.partner_shipping_id.zip"/>
+                                </strong>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items Summary -->
+                <div style="border: 1px solid #ddd; padding: 8px; margin-bottom: 10px; background: #fafafa;">
+                    <strong>รายการสินค้า:</strong>
+                    <t t-set="item_count" t-value="0"/>
+                    <t t-foreach="order.order_line[:5]" t-as="line">
+                        <t t-set="item_count" t-value="item_count + 1"/>
+                        <div style="font-size: 9pt;">
+                            • <t t-esc="line.product_id.name[:40]"/>
+                            <t t-if="len(line.product_id.name) > 40">...</t>
+                            x<t t-esc="int(line.product_uom_qty)"/>
+                        </div>
+                    </t>
+                    <t t-if="len(order.order_line) > 5">
+                        <div style="font-size: 9pt; color: #666;">
+                            ... และอีก <t t-esc="len(order.order_line) - 5"/> รายการ
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Barcode / QR -->
+                <div style="text-align: center; margin: 10px 0;">
+                    <img t-att-src="'/report/barcode/Code128/%s' % order.name"
+                         style="height: 40px;" alt="Barcode"/>
+                    <div style="font-size: 10pt; margin-top: 3px;">
+                        <t t-esc="order.name"/>
+                    </div>
+                </div>
+
+                <!-- Footer with Sender -->
+                <div style="position: absolute; bottom: 10px; left: 10px; right: 10px;
+                            border-top: 1px dashed #ccc; padding-top: 8px; font-size: 9pt;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="width: 50%;">
+                                <strong>ผู้ส่ง:</strong>
+                                <t t-esc="order.company_id.name"/><br/>
+                                <t t-if="order.company_id.phone">
+                                    Tel: <t t-esc="order.company_id.phone"/>
+                                </t>
+                            </td>
+                            <td style="width: 50%; text-align: right;">
+                                <t t-if="order.tracking_number">
+                                    <strong>Tracking:</strong><br/>
+                                    <span style="font-size: 11pt;">
+                                        <t t-esc="order.tracking_number"/>
+                                    </span>
+                                </t>
+                                <t t-if="order.shipping_carrier">
+                                    <br/>
+                                    <span style="font-size: 10pt; color: #666;">
+                                        <t t-esc="dict(order._fields['shipping_carrier'].selection).get(order.shipping_carrier)"/>
+                                    </span>
+                                </t>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- Print Date Footer (outside label) -->
+            <div style="text-align: center; font-size: 8pt; color: #999; margin-top: 5px;">
+                พิมพ์เมื่อ: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y %H:%M')"/>
+            </div>
+        </div>
+    </template>
+
+    <!-- A4 Multi-label Template -->
+    <template id="report_shipping_labels_a4">
+        <t t-call="web.html_container">
+            <t t-call="web.basic_layout">
+                <div class="page" style="font-family: 'Sarabun', Arial, sans-serif;">
+                    <style>
+                        .label-grid {
+                            display: flex;
+                            flex-wrap: wrap;
+                            justify-content: space-between;
+                        }
+                        .label-item {
+                            width: 48%;
+                            height: 130mm;
+                            border: 1px solid #000;
+                            padding: 8px;
+                            margin-bottom: 10px;
+                            box-sizing: border-box;
+                            page-break-inside: avoid;
+                            font-size: 10pt;
+                        }
+                    </style>
+                    <div class="label-grid">
+                        <t t-foreach="docs" t-as="order">
+                            <div class="label-item">
+                                <!-- Compact label content -->
+                                <div style="border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 8px;">
+                                    <strong><t t-esc="order.name"/></strong>
+                                    <span style="float: right; font-size: 9pt;">
+                                        <t t-esc="order.date_order.strftime('%d/%m/%y') if order.date_order else ''"/>
+                                    </span>
+                                </div>
+
+                                <div style="margin-bottom: 10px;">
+                                    <div style="font-size: 12pt; font-weight: bold;">
+                                        <t t-esc="order.partner_shipping_id.name"/>
+                                    </div>
+                                    <div>Tel: <t t-esc="order.partner_shipping_id.phone or order.partner_shipping_id.mobile or '-'"/></div>
+                                    <div style="font-size: 9pt; line-height: 1.3;">
+                                        <t t-esc="order.partner_shipping_id.street or ''"/>
+                                        <t t-if="order.partner_shipping_id.street2">
+                                            <t t-esc="order.partner_shipping_id.street2"/>
+                                        </t>
+                                        <t t-esc="order.partner_shipping_id.city or ''"/>
+                                        <t t-esc="order.partner_shipping_id.state_id.name if order.partner_shipping_id.state_id else ''"/>
+                                        <strong style="color: #c00;">
+                                            <t t-esc="order.partner_shipping_id.zip or ''"/>
+                                        </strong>
+                                    </div>
+                                </div>
+
+                                <div style="border: 1px solid #eee; padding: 5px; font-size: 8pt; background: #fafafa;">
+                                    <t t-foreach="order.order_line[:3]" t-as="line">
+                                        <div>• <t t-esc="line.product_id.name[:30]"/> x<t t-esc="int(line.product_uom_qty)"/></div>
+                                    </t>
+                                    <t t-if="len(order.order_line) > 3">
+                                        <div style="color: #666;">+<t t-esc="len(order.order_line) - 3"/> more</div>
+                                    </t>
+                                </div>
+
+                                <div style="text-align: center; margin: 8px 0;">
+                                    <img t-att-src="'/report/barcode/Code128/%s' % order.name"
+                                         style="height: 30px;" alt="Barcode"/>
+                                </div>
+
+                                <t t-if="order.tracking_number">
+                                    <div style="text-align: center; font-size: 9pt;">
+                                        <strong>Tracking:</strong> <t t-esc="order.tracking_number"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
