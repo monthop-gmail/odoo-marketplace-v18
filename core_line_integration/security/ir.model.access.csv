@@ -29,6 +29,12 @@ access_line_rich_menu_area_admin,line.rich.menu.area.admin,model_line_rich_menu_
 access_sale_order_ship_wizard,sale.order.ship.wizard,model_sale_order_ship_wizard,base.group_user,1,1,1,1
 access_sale_order_batch_ship_wizard,sale.order.batch.ship.wizard,model_sale_order_batch_ship_wizard,base.group_user,1,1,1,1
 access_line_message_wizard,line.message.wizard,model_line_message_wizard,base.group_user,1,1,1,1
+access_line_group_user,line.group.user,model_line_group,base.group_user,1,0,0,0
+access_line_group_manager,line.group.manager,model_line_group,group_line_channel_manager,1,1,1,0
+access_line_group_admin,line.group.admin,model_line_group,group_line_channel_admin,1,1,1,1
+access_line_group_member_user,line.group.member.user,model_line_group_member,base.group_user,1,0,0,0
+access_line_group_member_manager,line.group.member.manager,model_line_group_member,group_line_channel_manager,1,1,1,0
+access_line_group_member_admin,line.group.member.admin,model_line_group_member,group_line_channel_admin,1,1,1,1
 access_admin_team_member_user,admin.team.member.user,model_admin_team_member,base.group_user,1,0,0,0
 access_admin_team_member_manager,admin.team.member.manager,model_admin_team_member,group_line_channel_manager,1,1,1,0
 access_admin_team_member_admin,admin.team.member.admin,model_admin_team_member,group_line_channel_admin,1,1,1,1

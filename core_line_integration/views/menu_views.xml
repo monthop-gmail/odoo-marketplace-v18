@@ -33,6 +33,13 @@
               action="line_channel_member_action"
               sequence="10"/>
 
+    <!-- Groups Menu -->
+    <menuitem id="menu_line_groups"
+              name="Groups"
+              parent="menu_line_members_root"
+              action="line_group_action"
+              sequence="20"/>
+
     <!-- Reporting Menu -->
     <menuitem id="menu_line_reporting"
               name="Reporting"

@@ -360,6 +360,91 @@ class LineApiService:
             _logger.error(f'Failed to unlink user rich menu: {e}')
             raise LineApiError(f'Failed to unlink user rich menu: {e}')
 
+    # ==================== Group/Room ====================
+
+    def get_group_summary(self, group_id):
+        """
+        Get group summary (name, picture)
+
+        Args:
+            group_id: LINE group ID
+
+        Returns:
+            dict: {groupId, groupName, pictureUrl}
+        """
+        url = f'{LINE_API_BASE}/bot/group/{group_id}/summary'
+
+        try:
+            response = requests.get(url, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            _logger.error(f'Failed to get group summary for {group_id}: {e}')
+            raise LineApiError(f'Failed to get group summary: {e}')
+
+    def get_group_member_count(self, group_id):
+        """
+        Get number of members in a group
+
+        Args:
+            group_id: LINE group ID
+
+        Returns:
+            dict: {count: int}
+        """
+        url = f'{LINE_API_BASE}/bot/group/{group_id}/members/count'
+
+        try:
+            response = requests.get(url, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            _logger.error(f'Failed to get group member count for {group_id}: {e}')
+            raise LineApiError(f'Failed to get group member count: {e}')
+
+    def get_group_member_ids(self, group_id, start=None):
+        """
+        Get list of user IDs in a group
+
+        Args:
+            group_id: LINE group ID
+            start: Continuation token for pagination
+
+        Returns:
+            dict: {memberIds: [...], next: token_or_None}
+        """
+        url = f'{LINE_API_BASE}/bot/group/{group_id}/members/ids'
+        params = {}
+        if start:
+            params['start'] = start
+
+        try:
+            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            _logger.error(f'Failed to get group member IDs for {group_id}: {e}')
+            raise LineApiError(f'Failed to get group member IDs: {e}')
+
+    def leave_group(self, group_id, group_type='group'):
+        """
+        Leave a group or room
+
+        Args:
+            group_id: LINE group/room ID
+            group_type: 'group' or 'room'
+        """
+        endpoint = 'group' if group_type == 'group' else 'room'
+        url = f'{LINE_API_BASE}/bot/{endpoint}/{group_id}/leave'
+
+        try:
+            response = requests.post(url, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            return {'success': True}
+        except requests.exceptions.RequestException as e:
+            _logger.error(f'Failed to leave {group_type} {group_id}: {e}')
+            raise LineApiError(f'Failed to leave {group_type}: {e}')
+
     # ==================== LIFF Token Verification ====================
 
     def verify_access_token(self, access_token):
@@ -556,6 +641,31 @@ class MockLineApiService(LineApiService):
     def add_mock_profile(self, user_id, profile):
         """Add mock profile (for testing)"""
         self.mock_profiles[user_id] = profile
+
+    def get_group_summary(self, group_id):
+        """Mock group summary"""
+        return {
+            'groupId': group_id,
+            'groupName': f'Mock Group {group_id[:8]}',
+            'pictureUrl': 'https://example.com/mock_group.png',
+        }
+
+    def get_group_member_profile(self, group_id, user_id):
+        """Mock group member profile"""
+        return self.get_profile(user_id)
+
+    def get_group_member_count(self, group_id):
+        """Mock group member count"""
+        return {'count': 5}
+
+    def get_group_member_ids(self, group_id, start=None):
+        """Mock group member IDs"""
+        return {'memberIds': [], 'next': None}
+
+    def leave_group(self, group_id, group_type='group'):
+        """Mock leave group"""
+        _logger.info(f'[MOCK] Bot left {group_type} {group_id}')
+        return {'success': True, 'mock': True}
 
     def get_bot_info(self):
         """Mock bot info"""

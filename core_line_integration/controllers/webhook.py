@@ -140,6 +140,8 @@ class LineWebhookController(http.Controller):
             'postback': self._handle_postback,
             'join': self._handle_join,
             'leave': self._handle_leave,
+            'memberJoined': self._handle_member_joined,
+            'memberLeft': self._handle_member_left,
         }
 
         handler = handlers.get(event_type)
@@ -262,9 +264,10 @@ class LineWebhookController(http.Controller):
 
     def _handle_message(self, channel, event):
         """
-        Handle message event - user sent a message
+        Handle message event - user sent a message (1:1 or group)
         """
         source = event.get('source', {})
+        source_type = source.get('type')  # 'user', 'group', or 'room'
         user_id = source.get('userId')
         reply_token = event.get('replyToken')
         message = event.get('message', {})
@@ -272,6 +275,15 @@ class LineWebhookController(http.Controller):
         message_text = message.get('text', '')
 
         if not user_id:
+            return
+
+        # Route group/room messages to separate handler
+        if source_type in ('group', 'room'):
+            group_id = source.get('groupId') or source.get('roomId')
+            self._handle_group_message(
+                channel, event, group_id, source_type,
+                user_id, reply_token, message_type, message_text
+            )
             return
 
         _logger.info(f'Message from {user_id}: {message_type} - {message_text[:50] if message_text else ""}')
@@ -299,6 +311,93 @@ class LineWebhookController(http.Controller):
                     line_service.reply_message(reply_token, [response])
                 except Exception as e:
                     _logger.error(f'Failed to reply: {e}')
+
+    def _handle_group_message(self, channel, event, group_id, group_type,
+                              user_id, reply_token, message_type, message_text):
+        """
+        Handle message from a group or room.
+
+        Responds to keyword commands when the bot is mentioned or
+        specific keywords are used.
+        """
+        _logger.info(
+            f'Group message in {group_type} {group_id} from {user_id}: '
+            f'{message_type} - {message_text[:50] if message_text else ""}'
+        )
+
+        if message_type != 'text' or not reply_token:
+            return
+
+        ctx = dict(
+            tracking_disable=True,
+            mail_create_nosubscribe=True,
+            mail_auto_subscribe_no_notify=True,
+        )
+
+        text_lower = message_text.lower().strip()
+
+        # Get LIFF URLs
+        liff_urls = {}
+        liff_apps = request.env['line.liff'].sudo().search([
+            ('channel_id', '=', channel.id),
+            ('active', '=', True),
+        ])
+        for app in liff_apps:
+            liff_urls[app.liff_type] = app.liff_url
+
+        buyer_url = liff_urls.get('buyer', channel.liff_url or '')
+
+        # Group keywords (simpler set than 1:1 chat)
+        from ..services.line_messaging import LineMessageBuilder
+
+        group_keywords = {
+            'help': (
+                '🛍️ คำสั่งที่ใช้ได้ในกลุ่ม:\n\n'
+                '• "shop" — เปิดร้านค้า\n'
+                '• "products" — ดูสินค้า\n'
+                '• "help" — แสดงคำสั่งทั้งหมด'
+            ),
+            'shop': f'🛍️ เปิดร้านค้า: {buyer_url}' if buyer_url else 'เร็วๆ นี้!',
+            'products': f'📦 ดูสินค้า: {buyer_url}?page=products' if buyer_url else 'เร็วๆ นี้!',
+        }
+
+        response_text = group_keywords.get(text_lower)
+        if response_text:
+            line_service = self._get_line_service(channel)
+            try:
+                line_service.reply_message(reply_token, [LineMessageBuilder.text(response_text)])
+            except Exception as e:
+                _logger.error(f'Failed to reply in group: {e}')
+
+        # Update group's last activity
+        group_rec = request.env['line.group'].sudo().search([
+            ('channel_id', '=', channel.id),
+            ('line_group_id', '=', group_id),
+        ], limit=1)
+
+        if group_rec:
+            # Track the user as a known group member
+            group_member = request.env['line.group.member'].sudo().search([
+                ('group_id', '=', group_rec.id),
+                ('line_user_id', '=', user_id),
+            ], limit=1)
+
+            if not group_member:
+                # Try to get display name from channel member
+                channel_member = request.env['line.channel.member'].sudo().search([
+                    ('channel_id', '=', channel.id),
+                    ('line_user_id', '=', user_id),
+                ], limit=1)
+
+                request.env['line.group.member'].sudo().with_context(**ctx).create({
+                    'group_id': group_rec.id,
+                    'line_user_id': user_id,
+                    'display_name': channel_member.display_name if channel_member else f'User {user_id[:8]}',
+                    'channel_member_id': channel_member.id if channel_member else False,
+                    'partner_id': channel_member.partner_id.id if channel_member and channel_member.partner_id else False,
+                    'is_in_group': True,
+                    'joined_date': fields_Datetime_now(),
+                })
 
     def _get_keyword_response(self, channel, message_text, member=None):
         """
@@ -519,20 +618,247 @@ class LineWebhookController(http.Controller):
                 _logger.error(f'Failed to reply view_order: {e}')
 
     def _handle_join(self, channel, event):
-        """Handle join event - bot joined a group or room"""
+        """
+        Handle join event - bot was invited to a group or room.
+        Creates/reactivates a line.group record and fetches group info.
+        """
         source = event.get('source', {})
-        source_type = source.get('type')
+        source_type = source.get('type')  # 'group' or 'room'
         group_id = source.get('groupId') or source.get('roomId')
+        reply_token = event.get('replyToken')
+
+        if not group_id:
+            _logger.warning('Join event without groupId/roomId')
+            return
 
         _logger.info(f'Bot joined {source_type}: {group_id}')
 
+        ctx = dict(
+            tracking_disable=True,
+            mail_create_nosubscribe=True,
+            mail_auto_subscribe_no_notify=True,
+        )
+
+        group_type = 'group' if source_type == 'group' else 'room'
+
+        # Create or reactivate group record
+        group_rec = request.env['line.group'].sudo().with_context(**ctx).get_or_create_group(
+            channel.id,
+            group_id,
+            group_type=group_type,
+            vals={'joined_date': fields_Datetime_now()},
+        )
+
+        # Fetch group info from LINE API (async-safe: best effort)
+        line_service = self._get_line_service(channel)
+        if group_type == 'group':
+            try:
+                summary = line_service.get_group_summary(group_id)
+                count_data = line_service.get_group_member_count(group_id)
+                group_rec.with_context(**ctx).write({
+                    'name': summary.get('groupName', ''),
+                    'picture_url': summary.get('pictureUrl', ''),
+                    'member_count': count_data.get('count', 0) if isinstance(count_data, dict) else 0,
+                })
+            except Exception as e:
+                _logger.warning(f'Could not fetch group info for {group_id}: {e}')
+
+        # Send welcome message to the group
+        if reply_token:
+            try:
+                from ..services.line_messaging import LineMessageBuilder
+
+                buyer_url = ''
+                buyer_liff = request.env['line.liff'].sudo().search([
+                    ('channel_id', '=', channel.id),
+                    ('liff_type', '=', 'buyer'),
+                    ('active', '=', True),
+                ], limit=1)
+                if buyer_liff:
+                    buyer_url = buyer_liff.liff_url
+
+                welcome_text = (
+                    f'สวัสดีค่ะ! 🎉 ขอบคุณที่เชิญ {channel.name} เข้ากลุ่ม\n\n'
+                    f'พิมพ์ "help" เพื่อดูคำสั่งที่ใช้ได้\n'
+                    f'พิมพ์ "shop" เพื่อเปิดร้านค้า'
+                )
+                if buyer_url:
+                    welcome_text += f'\n\n🛍️ ร้านค้า: {buyer_url}'
+
+                line_service.reply_message(reply_token, [LineMessageBuilder.text(welcome_text)])
+            except Exception as e:
+                _logger.error(f'Failed to send group welcome message: {e}')
+
+        # Log notification
+        request.env['line.notify.log'].sudo().with_context(**ctx).create({
+            'channel_id': channel.id,
+            'line_user_id': group_id,
+            'notify_type': 'system',
+            'message': f'Bot joined {group_type}: {group_rec.display_name} ({group_id})',
+            'state': 'sent',
+            'sent_date': fields_Datetime_now(),
+        })
+
     def _handle_leave(self, channel, event):
-        """Handle leave event - bot left a group or room"""
+        """
+        Handle leave event - bot was removed from a group or room.
+        Marks the line.group record as inactive.
+        """
         source = event.get('source', {})
         source_type = source.get('type')
         group_id = source.get('groupId') or source.get('roomId')
 
+        if not group_id:
+            return
+
         _logger.info(f'Bot left {source_type}: {group_id}')
+
+        ctx = dict(
+            tracking_disable=True,
+            mail_create_nosubscribe=True,
+            mail_auto_subscribe_no_notify=True,
+        )
+
+        group_rec = request.env['line.group'].sudo().search([
+            ('channel_id', '=', channel.id),
+            ('line_group_id', '=', group_id),
+        ], limit=1)
+
+        if group_rec:
+            group_rec.with_context(**ctx).write({
+                'is_active': False,
+                'left_date': fields_Datetime_now(),
+            })
+
+        # Log notification
+        request.env['line.notify.log'].sudo().with_context(**ctx).create({
+            'channel_id': channel.id,
+            'line_user_id': group_id,
+            'notify_type': 'system',
+            'message': f'Bot left {source_type}: {group_id}',
+            'state': 'sent',
+            'sent_date': fields_Datetime_now(),
+        })
+
+    def _handle_member_joined(self, channel, event):
+        """
+        Handle memberJoined event - a user joined a group where the bot is.
+        Tracks new members in line.group.member.
+        """
+        source = event.get('source', {})
+        group_id = source.get('groupId') or source.get('roomId')
+        joined = event.get('joined', {})
+        members = joined.get('members', [])
+
+        if not group_id or not members:
+            return
+
+        _logger.info(f'Members joined group {group_id}: {[m.get("userId") for m in members]}')
+
+        ctx = dict(
+            tracking_disable=True,
+            mail_create_nosubscribe=True,
+            mail_auto_subscribe_no_notify=True,
+        )
+
+        group_rec = request.env['line.group'].sudo().search([
+            ('channel_id', '=', channel.id),
+            ('line_group_id', '=', group_id),
+        ], limit=1)
+
+        if not group_rec:
+            return
+
+        line_service = self._get_line_service(channel)
+        GroupMember = request.env['line.group.member'].sudo().with_context(**ctx)
+
+        for member_data in members:
+            user_id = member_data.get('userId')
+            if not user_id:
+                continue
+
+            # Get profile from group context
+            display_name = f'User {user_id[:8]}'
+            try:
+                profile = line_service.get_group_member_profile(group_id, user_id)
+                display_name = profile.get('displayName', display_name)
+            except Exception:
+                pass
+
+            # Find existing channel member
+            channel_member = request.env['line.channel.member'].sudo().search([
+                ('channel_id', '=', channel.id),
+                ('line_user_id', '=', user_id),
+            ], limit=1)
+
+            # Create or update group member
+            existing = GroupMember.search([
+                ('group_id', '=', group_rec.id),
+                ('line_user_id', '=', user_id),
+            ], limit=1)
+
+            if existing:
+                existing.write({
+                    'is_in_group': True,
+                    'display_name': display_name,
+                    'joined_date': fields_Datetime_now(),
+                    'left_date': False,
+                })
+            else:
+                GroupMember.create({
+                    'group_id': group_rec.id,
+                    'line_user_id': user_id,
+                    'display_name': display_name,
+                    'channel_member_id': channel_member.id if channel_member else False,
+                    'partner_id': channel_member.partner_id.id if channel_member and channel_member.partner_id else False,
+                    'is_in_group': True,
+                    'joined_date': fields_Datetime_now(),
+                })
+
+    def _handle_member_left(self, channel, event):
+        """
+        Handle memberLeft event - a user left a group where the bot is.
+        Marks the member as no longer in the group.
+        """
+        source = event.get('source', {})
+        group_id = source.get('groupId') or source.get('roomId')
+        left = event.get('left', {})
+        members = left.get('members', [])
+
+        if not group_id or not members:
+            return
+
+        _logger.info(f'Members left group {group_id}: {[m.get("userId") for m in members]}')
+
+        ctx = dict(
+            tracking_disable=True,
+            mail_create_nosubscribe=True,
+            mail_auto_subscribe_no_notify=True,
+        )
+
+        group_rec = request.env['line.group'].sudo().search([
+            ('channel_id', '=', channel.id),
+            ('line_group_id', '=', group_id),
+        ], limit=1)
+
+        if not group_rec:
+            return
+
+        for member_data in members:
+            user_id = member_data.get('userId')
+            if not user_id:
+                continue
+
+            group_member = request.env['line.group.member'].sudo().search([
+                ('group_id', '=', group_rec.id),
+                ('line_user_id', '=', user_id),
+            ], limit=1)
+
+            if group_member:
+                group_member.with_context(**ctx).write({
+                    'is_in_group': False,
+                    'left_date': fields_Datetime_now(),
+                })
 
 
 def fields_Datetime_now():

@@ -60,6 +60,7 @@ Supports multiple business types through a single LINE Official Account.
         'views/res_config_settings_views.xml',
         'views/menu_views.xml',
         'views/line_rich_menu_views.xml',
+        'views/line_group_views.xml',
     ],
     'assets': {
         'web.assets_backend': [

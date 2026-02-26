@@ -9,4 +9,5 @@ from . import res_config_settings
 from . import line_wishlist
 from . import line_compare
 from . import line_rich_menu
+from . import line_group
 from . import admin_team_member
