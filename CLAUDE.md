@@ -37,6 +37,22 @@ Odoo 18 + Marketplace Engine
 - **Auth:** LIFF token (production) / X-Line-User-Id (dev mock)
 - **LIFF Apps:** liff/ (buyer), liff_admin/, liff_seller/, liff_promotion/, liff_support/
 
+### 3. core_ambassador (Odoo Module) — "สภา shop"
+- **Path:** `core_ambassador/`
+- **Depends:** core_marketplace, core_line_integration
+- **Purpose:** Brand Ambassador / Guru endorsement system
+- **Key Models:** ambassador.specialty, ambassador.application, product.endorsement, endorsement.request + res.partner extension (is_ambassador, ambassador_state, ambassador_tier)
+- **Security Groups:**
+  - `marketplace_ambassador_group` → Approved Ambassador (independent from seller hierarchy)
+- **API Bases:** `/api/line-buyer/ambassador/`, `/api/line-ambassador/`, `/api/line-seller/endorsements/`, `/api/line-admin/ambassadors/`
+- **Ambassador Flow:**
+  ```
+  none → draft → pending → approved (or rejected/suspended)
+  ```
+- **Endorsement Flow:**
+  Seller requests → Ambassador approves → Badge on product
+- **Tier System:** Bronze (5%) / Silver (7%) / Gold (10%) commission from platform share
+
 ## Business Roles
 | Role | Status | Access |
 |------|--------|--------|
@@ -44,6 +60,7 @@ Odoo 18 + Marketplace Engine
 | Draft Seller | seller_status=draft | Application form |
 | Pending Seller | seller_status=pending | Waiting approval |
 | Approved Seller | seller_status=approved | Product Mgmt, Dashboard, Commission |
+| Ambassador | ambassador_state=approved | Endorse products, Dashboard, Commission |
 | Platform Officer | Security group | Seller approval, Product moderation |
 | Platform Manager | Security group | Full system access |
 
@@ -58,6 +75,7 @@ none → draft → pending → approved
 3. Boost product placement
 4. Featured store promotion
 5. Affiliate system (future)
+6. Brand Endorsement fees (Ambassador commission from platform share)
 
 ## Development Conventions
 
@@ -119,6 +137,11 @@ Each plugin contains: `plugin.json` + `CONNECTORS.md` + `skills/*/SKILL.md` + `c
 - **Connectors**: Abstract `~~category` placeholders scoped per plugin
 
 ## Phase Roadmap
-- **Phase 1:** Buyer + Seller basic marketplace (current)
-- **Phase 2:** Wallet, Withdrawal, Advanced commission
-- **Phase 3:** Affiliate network, AI content moderation, Seller ranking, Boost ads
+- **Phase 1:** Buyer + Seller basic marketplace (complete)
+- **Phase 2:** Wallet, Withdrawal, Advanced commission (complete)
+- **Phase 3:** Brand Ambassador / สภา shop (Sprint 1 Foundation complete)
+  - Sprint 1: Models, Security, Views, API (done)
+  - Sprint 2: Ambassador Wallet, Commission tracking (pending)
+  - Sprint 3: LINE Integration, Rich Menu (pending)
+  - Sprint 4: Analytics Dashboard (pending)
+- **Phase 4:** Affiliate network, AI content moderation, Seller ranking, Boost ads

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="specialty_ev" model="ambassador.specialty">
+            <field name="name">EV / Electric Vehicles</field>
+            <field name="code">ev</field>
+            <field name="icon">fa-bolt</field>
+            <field name="sequence">1</field>
+        </record>
+
+        <record id="specialty_tech" model="ambassador.specialty">
+            <field name="name">Technology</field>
+            <field name="code">tech</field>
+            <field name="icon">fa-laptop</field>
+            <field name="sequence">2</field>
+        </record>
+
+        <record id="specialty_food" model="ambassador.specialty">
+            <field name="name">Food &amp; Agriculture</field>
+            <field name="code">food</field>
+            <field name="icon">fa-leaf</field>
+            <field name="sequence">3</field>
+        </record>
+
+        <record id="specialty_health" model="ambassador.specialty">
+            <field name="name">Health &amp; Wellness</field>
+            <field name="code">health</field>
+            <field name="icon">fa-heartbeat</field>
+            <field name="sequence">4</field>
+        </record>
+
+        <record id="specialty_fashion" model="ambassador.specialty">
+            <field name="name">Fashion &amp; Textile</field>
+            <field name="code">fashion</field>
+            <field name="icon">fa-scissors</field>
+            <field name="sequence">5</field>
+        </record>
+
+        <record id="specialty_home" model="ambassador.specialty">
+            <field name="name">Home &amp; Lifestyle</field>
+            <field name="code">home</field>
+            <field name="icon">fa-home</field>
+            <field name="sequence">6</field>
+        </record>
+
+    </data>
+</odoo>

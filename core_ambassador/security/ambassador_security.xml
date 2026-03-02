@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ==================== Security Group ==================== -->
+
+        <record id="marketplace_ambassador_group" model="res.groups">
+            <field name="name">Ambassador</field>
+            <field name="category_id" ref="core_marketplace.marketplace_security_category"/>
+            <field name="comment">Approved Brand Ambassadors who endorse products</field>
+        </record>
+
+        <!-- ==================== Record Rules ==================== -->
+
+        <!-- Ambassador Application: ambassador sees own -->
+        <record id="ambassador_application_ambassador_rule" model="ir.rule">
+            <field name="name">Ambassador Application: own only</field>
+            <field name="model_id" ref="model_ambassador_application"/>
+            <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
+            <field name="groups" eval="[(4, ref('marketplace_ambassador_group'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Product Endorsement: ambassador sees own -->
+        <record id="product_endorsement_ambassador_rule" model="ir.rule">
+            <field name="name">Product Endorsement: ambassador own</field>
+            <field name="model_id" ref="model_product_endorsement"/>
+            <field name="domain_force">[('ambassador_id', '=', user.partner_id.id)]</field>
+            <field name="groups" eval="[(4, ref('marketplace_ambassador_group'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Product Endorsement: seller sees own products' endorsements -->
+        <record id="product_endorsement_seller_rule" model="ir.rule">
+            <field name="name">Product Endorsement: seller sees own</field>
+            <field name="model_id" ref="model_product_endorsement"/>
+            <field name="domain_force">[('seller_id', '=', user.partner_id.id)]</field>
+            <field name="groups" eval="[(4, ref('core_marketplace.marketplace_seller_group'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Endorsement Request: ambassador sees own -->
+        <record id="endorsement_request_ambassador_rule" model="ir.rule">
+            <field name="name">Endorsement Request: ambassador own</field>
+            <field name="model_id" ref="model_endorsement_request"/>
+            <field name="domain_force">[('ambassador_id', '=', user.partner_id.id)]</field>
+            <field name="groups" eval="[(4, ref('marketplace_ambassador_group'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Endorsement Request: seller sees own -->
+        <record id="endorsement_request_seller_rule" model="ir.rule">
+            <field name="name">Endorsement Request: seller own</field>
+            <field name="model_id" ref="model_endorsement_request"/>
+            <field name="domain_force">[('seller_id', '=', user.partner_id.id)]</field>
+            <field name="groups" eval="[(4, ref('core_marketplace.marketplace_seller_group'))]"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- Officer: full access to all ambassador models -->
+        <record id="ambassador_application_officer_rule" model="ir.rule">
+            <field name="name">Ambassador Application: officer all</field>
+            <field name="model_id" ref="model_ambassador_application"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('core_marketplace.marketplace_officer_group'))]"/>
+        </record>
+
+        <record id="product_endorsement_officer_rule" model="ir.rule">
+            <field name="name">Product Endorsement: officer all</field>
+            <field name="model_id" ref="model_product_endorsement"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('core_marketplace.marketplace_officer_group'))]"/>
+        </record>
+
+        <record id="endorsement_request_officer_rule" model="ir.rule">
+            <field name="name">Endorsement Request: officer all</field>
+            <field name="model_id" ref="model_endorsement_request"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('core_marketplace.marketplace_officer_group'))]"/>
+        </record>
+
+    </data>
+</odoo>

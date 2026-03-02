@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Ambassador top menu under Marketplace -->
+        <menuitem id="wk_ambassador_menu"
+                  name="Ambassadors"
+                  parent="core_marketplace.wk_seller_dashboard"
+                  groups="core_marketplace.marketplace_officer_group"
+                  sequence="8"/>
+
+        <menuitem id="wk_ambassador_list_menu"
+                  name="Ambassadors"
+                  parent="wk_ambassador_menu"
+                  action="action_ambassador_list"
+                  sequence="1"/>
+
+        <menuitem id="wk_ambassador_application_menu"
+                  name="Applications"
+                  parent="wk_ambassador_menu"
+                  action="action_ambassador_application_list"
+                  sequence="2"/>
+
+        <menuitem id="wk_endorsement_menu"
+                  name="Endorsements"
+                  parent="wk_ambassador_menu"
+                  action="action_product_endorsement_list"
+                  sequence="3"/>
+
+        <menuitem id="wk_endorsement_request_menu"
+                  name="Endorsement Requests"
+                  parent="wk_ambassador_menu"
+                  action="action_endorsement_request_list"
+                  sequence="4"/>
+
+        <menuitem id="wk_ambassador_specialty_menu"
+                  name="Specialties"
+                  parent="wk_ambassador_menu"
+                  action="action_ambassador_specialty_list"
+                  sequence="10"/>
+
+    </data>
+</odoo>

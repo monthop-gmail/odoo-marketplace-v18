@@ -13,7 +13,8 @@
 - [Modules](#modules)
   - [core\_marketplace](#1-core_marketplace)
   - [core\_line\_integration](#2-core_line_integration)
-  - [agents](#3-agents)
+  - [core\_ambassador](#3-core_ambassador)
+  - [agents](#4-agents)
 - [Business Roles](#business-roles)
 - [API Reference](#api-reference)
 - [Revenue Model](#revenue-model)
@@ -175,7 +176,49 @@
 
 ---
 
-### 3. `agents`
+### 3. `core_ambassador`
+
+> Brand Ambassador / Guru endorsement system (สภา shop) — `v18.0.1.0.0`
+
+**Depends:** `core_marketplace`, `core_line_integration`
+
+**Models (5 files):**
+
+| Model | Description |
+|-------|-------------|
+| `brand_ambassador.py` | res.partner extension (is_ambassador, ambassador_state, tier, specialties) |
+| `ambassador_specialty.py` | Expertise categories (EV, Tech, Food, Health, Fashion, Home) |
+| `ambassador_application.py` | Application workflow: draft → submitted → under_review → approved/rejected |
+| `product_endorsement.py` | Endorsement record (ambassador + product link, review, video, rating) |
+| `endorsement_request.py` | Request workflow: seller requests → ambassador approves/rejects |
+
+**Security Groups:**
+
+| Group | Access Level |
+|-------|-------------|
+| `marketplace_ambassador_group` | Approved ambassador (independent from seller hierarchy) |
+
+**Controllers / API (6 files, ~30 endpoints):**
+
+| Controller | Endpoints | Description |
+|-----------|-----------|-------------|
+| `api_ambassador_apply.py` | Buyer | Ambassador application, specialties |
+| `api_ambassador_endorsements.py` | Ambassador | Manage endorsements, approve/reject requests, dashboard |
+| `api_seller_endorsements.py` | Seller | Request endorsement, browse ambassadors |
+| `api_admin_ambassadors.py` | Admin | Manage ambassadors, applications, endorsements |
+| `api_buyer_endorsements.py` | Buyer | Browse endorsed products, ambassador profiles |
+
+**Ambassador Tier & Commission:**
+
+| Tier | Commission Rate | Source |
+|------|----------------|--------|
+| Bronze | 5% | Platform share |
+| Silver | 7% | Platform share |
+| Gold | 10% | Platform share |
+
+---
+
+### 4. `agents`
 
 > Claude Code Agent Architecture — Plugin Pattern
 
@@ -241,7 +284,8 @@
 | **Draft Seller** | `seller_status=draft` | กรอกใบสมัคร Seller |
 | **Pending Seller** | `seller_status=pending` | รออนุมัติจาก Admin |
 | **Approved Seller** | `seller_status=approved` | จัดการสินค้า, Dashboard, Commission, Wallet |
-| **Platform Officer** | Security group | อนุมัติ Seller, Moderate สินค้า |
+| **Ambassador** | `ambassador_state=approved` | รับรองสินค้า, Endorsement Dashboard, Commission |
+| **Platform Officer** | Security group | อนุมัติ Seller/Ambassador, Moderate สินค้า |
 | **Platform Manager** | Security group | Full system access |
 
 ---
@@ -260,9 +304,10 @@
 
 | API Group | Base URL | Endpoints | Auth Required |
 |-----------|----------|-----------|---------------|
-| **Buyer** | `/api/line-buyer/` | 46 endpoints | LIFF token / mock |
-| **Seller** | `/api/line-seller/` | 28 endpoints | LIFF token + seller role |
-| **Admin** | `/api/line-admin/` | 23 endpoints | LIFF token + officer/manager |
+| **Buyer** | `/api/line-buyer/` | 49 endpoints | LIFF token / mock |
+| **Seller** | `/api/line-seller/` | 34 endpoints | LIFF token + seller role |
+| **Ambassador** | `/api/line-ambassador/` | 8 endpoints | LIFF token + ambassador role |
+| **Admin** | `/api/line-admin/` | 31 endpoints | LIFF token + officer/manager |
 | **Webhook** | `/api/line-buyer/webhook/<channel_code>` | 1 endpoint | LINE signature |
 
 ### Response Format
@@ -294,7 +339,8 @@
 | 2 | Premium Seller subscription | Phase 2 |
 | 3 | Boost product placement | Phase 3 |
 | 4 | Featured store promotion | Phase 3 |
-| 5 | Affiliate system | Phase 3 |
+| 5 | Affiliate system | Phase 4 |
+| 6 | Brand Endorsement fees (Ambassador commission) | Phase 3 |
 
 ---
 
@@ -349,6 +395,18 @@ odoo-marketplace-v18/
 │   ├── docs/                              #   API documentation
 │   └── static/                            #   LIFF apps (buyer, seller, admin, promotion, support)
 │
+├── core_ambassador/                       # Odoo Module — Brand Ambassador (สภา shop)
+│   ├── __manifest__.py                    #   v18.0.1.0.0, depends: core_marketplace, core_line_integration
+│   ├── models/                            #   5 models (ambassador, specialty, application, endorsement, request)
+│   ├── controllers/                       #   6 API controllers (~30 endpoints)
+│   ├── views/                             #   6 backend view files + menu
+│   ├── security/                          #   Groups + ACL + record rules
+│   └── data/                              #   Sequences, specialties, config
+│
+├── docs/                                  # Project documentation
+│   ├── social_driven_community_marketplace_concept.md
+│   └── council_shop_priorities.md         #   สภา shop MVP priorities
+│
 └── agents/                                # Claude Code Agent Plugin
     ├── plugin.json                        #   Manifest (marketplace-platform v1.0.0)
     ├── CONNECTORS.md                      #   ~~category → tool mapping (12 connectors)
@@ -372,7 +430,7 @@ odoo-marketplace-v18/
 
 ## Roadmap
 
-### Phase 1 — Foundation (Current)
+### Phase 1 — Foundation (Complete)
 - [x] Multi-vendor marketplace engine
 - [x] Seller registration & approval flow
 - [x] Product management with approval workflow
@@ -385,13 +443,19 @@ odoo-marketplace-v18/
 - [x] Rich menu (role-based switching)
 - [x] Review & rating system
 
-### Phase 2 — Commerce
-- [ ] Wallet system
-- [ ] Withdrawal request workflow
-- [ ] Advanced commission calculation
-- [ ] Premium seller subscription
+### Phase 2 — Commerce (Complete)
+- [x] Wallet system
+- [x] Withdrawal request workflow
+- [x] Stock management & validation
+- [x] Shop staff system
 
-### Phase 3 — Growth
+### Phase 3 — Brand Ambassador / สภา shop
+- [x] Sprint 1: Models, Security, Views, API (~30 endpoints)
+- [ ] Sprint 2: Ambassador Wallet, Commission tracking
+- [ ] Sprint 3: LINE Integration, Rich Menu for ambassadors
+- [ ] Sprint 4: Analytics Dashboard, UTM tracking
+
+### Phase 4 — Growth
 - [ ] Affiliate network
 - [ ] AI content moderation
 - [ ] Seller ranking algorithm

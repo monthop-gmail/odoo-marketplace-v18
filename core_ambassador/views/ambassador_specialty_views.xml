@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Form View -->
+        <record id="ambassador_specialty_form_view" model="ir.ui.view">
+            <field name="name">ambassador.specialty.form</field>
+            <field name="model">ambassador.specialty</field>
+            <field name="arch" type="xml">
+                <form string="Ambassador Specialty">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="name"/>
+                                <field name="code"/>
+                                <field name="icon" placeholder="e.g. fa-bolt"/>
+                            </group>
+                            <group>
+                                <field name="sequence"/>
+                                <field name="active"/>
+                                <field name="ambassador_count"/>
+                            </group>
+                        </group>
+                        <group>
+                            <field name="description"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Tree View -->
+        <record id="ambassador_specialty_tree_view" model="ir.ui.view">
+            <field name="name">ambassador.specialty.tree</field>
+            <field name="model">ambassador.specialty</field>
+            <field name="arch" type="xml">
+                <list string="Ambassador Specialties">
+                    <field name="sequence" widget="handle"/>
+                    <field name="name"/>
+                    <field name="code"/>
+                    <field name="icon"/>
+                    <field name="ambassador_count"/>
+                    <field name="active"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_ambassador_specialty_list" model="ir.actions.act_window">
+            <field name="name">Specialties</field>
+            <field name="res_model">ambassador.specialty</field>
+            <field name="view_mode">list,form</field>
+        </record>
+
+    </data>
+</odoo>

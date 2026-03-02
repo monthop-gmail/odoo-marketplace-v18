@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Inherit res.partner form: add Ambassador tab -->
+        <record id="view_partner_ambassador_form" model="ir.ui.view">
+            <field name="name">res.partner.ambassador.form</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook" position="inside">
+                    <page name="ambassador" string="Ambassador"
+                          invisible="not is_ambassador">
+                        <group>
+                            <group string="Ambassador Status">
+                                <field name="is_ambassador"/>
+                                <field name="ambassador_state"/>
+                                <field name="ambassador_tier"/>
+                                <field name="ambassador_commission_rate"/>
+                                <field name="ambassador_approved_date"/>
+                                <field name="ambassador_application_id"/>
+                            </group>
+                            <group string="Stats">
+                                <field name="endorsement_count"/>
+                            </group>
+                        </group>
+                        <group string="Bio &amp; Specialties">
+                            <field name="ambassador_specialty_ids" widget="many2many_tags"/>
+                            <field name="ambassador_bio"/>
+                        </group>
+                        <group string="Social Media">
+                            <field name="ambassador_social_youtube" widget="url"/>
+                            <field name="ambassador_social_facebook" widget="url"/>
+                            <field name="ambassador_social_tiktok" widget="url"/>
+                            <field name="ambassador_social_instagram" widget="url"/>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Ambassador List (dedicated action for officer/manager) -->
+        <record id="ambassador_list_tree_view" model="ir.ui.view">
+            <field name="name">res.partner.ambassador.tree</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Ambassadors"
+                      decoration-success="ambassador_state == 'approved'"
+                      decoration-warning="ambassador_state == 'pending'"
+                      decoration-danger="ambassador_state in ('rejected', 'suspended')">
+                    <field name="name"/>
+                    <field name="ambassador_state"/>
+                    <field name="ambassador_tier"/>
+                    <field name="ambassador_commission_rate"/>
+                    <field name="endorsement_count"/>
+                    <field name="ambassador_approved_date"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Ambassador Search -->
+        <record id="ambassador_list_search_view" model="ir.ui.view">
+            <field name="name">res.partner.ambassador.search</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <search string="Search Ambassadors">
+                    <field name="name"/>
+                    <field name="ambassador_specialty_ids"/>
+                    <filter string="Approved" name="approved"
+                            domain="[('ambassador_state', '=', 'approved')]"/>
+                    <filter string="Pending" name="pending"
+                            domain="[('ambassador_state', '=', 'pending')]"/>
+                    <filter string="Suspended" name="suspended"
+                            domain="[('ambassador_state', '=', 'suspended')]"/>
+                    <separator/>
+                    <group expand="0" string="Group By">
+                        <filter string="Status" name="group_state"
+                                context="{'group_by': 'ambassador_state'}"/>
+                        <filter string="Tier" name="group_tier"
+                                context="{'group_by': 'ambassador_tier'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- Action: Ambassador List -->
+        <record id="action_ambassador_list" model="ir.actions.act_window">
+            <field name="name">Ambassadors</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('is_ambassador', '=', True)]</field>
+            <field name="context">{'search_default_approved': 1}</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'list', 'view_id': ref('ambassador_list_tree_view')})]"/>
+            <field name="search_view_id" ref="ambassador_list_search_view"/>
+        </record>
+
+    </data>
+</odoo>
