@@ -115,6 +115,13 @@ const SellerAPI = {
         return this.request(`/products/${productId}/submit`, { method: 'POST' });
     },
 
+    async restockProduct(productId, quantity) {
+        return this.request(`/products/${productId}/restock`, {
+            method: 'POST',
+            body: JSON.stringify({ quantity }),
+        });
+    },
+
     async getCategories() {
         return this.request('/categories');
     },

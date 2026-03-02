@@ -361,7 +361,13 @@ const App = {
             return;
         }
 
-        container.innerHTML = products.map(product => `
+        container.innerHTML = products.map(product => {
+            const isLowStock = product.stock_status === 'low_stock';
+            const stockBadgeHtml = isLowStock
+                ? `<div class="stock-badge low-stock">เหลือ ${Math.floor(product.qty_available)} ชิ้น</div>`
+                : '';
+
+            return `
             <div class="product-card">
                 <div class="product-card-tap" onclick="App.showProductDetail(${product.id})">
                     <img class="product-image" src="${product.image_url || Config.DEFAULT_PRODUCT_IMAGE}"
@@ -371,6 +377,7 @@ const App = {
                         <div class="product-name">${this.escapeHtml(product.name)}</div>
                         <div class="product-price">${product.currency}${this.formatNumber(product.price)}</div>
                         ${product.seller ? `<div class="product-seller">ผู้ขาย: ${this.escapeHtml(product.seller.name)}</div>` : ''}
+                        ${stockBadgeHtml}
                     </div>
                 </div>
                 <div class="product-card-actions">
@@ -383,8 +390,8 @@ const App = {
                         หยิบใส่ตะกร้า
                     </button>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     },
 
     renderFeaturedProducts(products) {
@@ -461,15 +468,19 @@ const App = {
                         <div class="pd-section-title">คำอธิบายสั้น</div>
                         <p class="pd-desc">${this.escapeHtml(product.short_description)}</p>
                     ` : ''}
+                    ${product.stock_status === 'low_stock' ? `<div class="pd-stock-info low-stock">เหลือเพียง ${Math.floor(product.qty_available)} ชิ้น</div>` : ''}
+                    ${product.stock_status === 'out_of_stock' ? `<div class="pd-stock-info out-of-stock">สินค้าหมด</div>` : ''}
                     <div class="pd-add-cart">
                         <div class="quantity-selector">
                             <button type="button" onclick="App.decrementQty()">-</button>
-                            <input type="number" id="product-qty" value="1" min="1" max="99">
+                            <input type="number" id="product-qty" value="1" min="1"
+                                   max="${product.is_service ? 99 : Math.max(Math.floor(product.qty_available), 1)}">
                             <button type="button" onclick="App.incrementQty()">+</button>
                         </div>
-                        <button class="btn btn-primary btn-block" onclick="App.addToCart(${product.id})">
+                        <button class="btn btn-primary btn-block" onclick="App.addToCart(${product.id})"
+                                ${product.stock_status === 'out_of_stock' ? 'disabled style="background:#ccc;cursor:not-allowed"' : ''}>
                             <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zm-9.83-3.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25z"/></svg>
-                            หยิบใส่ตะกร้า
+                            ${product.stock_status === 'out_of_stock' ? 'สินค้าหมด' : 'หยิบใส่ตะกร้า'}
                         </button>
                     </div>
                 </div>
@@ -488,7 +499,8 @@ const App = {
 
     incrementQty() {
         const input = document.getElementById('product-qty');
-        if (input && input.value < 99) {
+        const max = parseInt(input?.max) || 99;
+        if (input && parseInt(input.value) < max) {
             input.value = parseInt(input.value) + 1;
         }
     },
@@ -585,7 +597,15 @@ const App = {
         emptyEl?.classList.add('hidden');
         summaryEl?.classList.remove('hidden');
 
-        itemsEl.innerHTML = this.cart.lines.map(line => `
+        itemsEl.innerHTML = this.cart.lines.map(line => {
+            const stockWarning = !line.is_service && line.stock_status === 'low_stock'
+                ? `<div class="cart-stock-warning">เหลือ ${Math.floor(line.qty_available)} ชิ้น</div>`
+                : (!line.is_service && line.stock_status === 'out_of_stock'
+                    ? `<div class="cart-stock-warning" style="color:#c62828">สินค้าหมด</div>`
+                    : '');
+            const maxQty = line.is_service ? 99 : Math.floor(line.qty_available);
+            const plusDisabled = line.quantity >= maxQty ? ' disabled' : '';
+            return `
             <div class="cart-item">
                 <img class="cart-item-image" src="${line.product.image_url || Config.DEFAULT_PRODUCT_IMAGE}"
                      alt="${this.escapeHtml(line.product.name)}"
@@ -593,17 +613,18 @@ const App = {
                 <div class="cart-item-info">
                     <div class="cart-item-name">${this.escapeHtml(line.product.name)}</div>
                     <div class="cart-item-price">${this.cart.currency}${this.formatNumber(line.price_unit)}</div>
+                    ${stockWarning}
                     <div class="cart-item-actions">
                         <div class="cart-item-qty">
                             <button onclick="App.updateCartQty(${line.id}, ${line.quantity - 1})">-</button>
                             <span>${line.quantity}</span>
-                            <button onclick="App.updateCartQty(${line.id}, ${line.quantity + 1})">+</button>
+                            <button onclick="App.updateCartQty(${line.id}, ${line.quantity + 1})"${plusDisabled}>+</button>
                         </div>
                         <button class="cart-item-remove" onclick="App.removeCartItem(${line.id})">ลบ</button>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
 
         document.getElementById('cart-subtotal').textContent =
             `${this.cart.currency}${this.formatNumber(this.cart.subtotal)}`;

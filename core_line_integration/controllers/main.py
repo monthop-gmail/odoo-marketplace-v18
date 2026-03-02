@@ -170,9 +170,31 @@ def get_product_image_url(product, field='image_256'):
     return f"{base_url}/web/static/img/placeholder.png"
 
 
+def _get_stock_status(product):
+    """Determine stock status for a product.
+    Returns (stock_status, qty_available, is_service).
+    Service products are always 'in_stock'.
+    """
+    LOW_STOCK_THRESHOLD = 5
+    is_service = product.type == 'service'
+    qty = product.qty_available if hasattr(product, 'qty_available') else 0
+
+    if is_service:
+        return 'in_stock', qty, True
+
+    if qty <= 0:
+        return 'out_of_stock', qty, False
+    elif qty <= LOW_STOCK_THRESHOLD:
+        return 'low_stock', qty, False
+    else:
+        return 'in_stock', qty, False
+
+
 def format_product(product, include_details=False):
     """Format product for API response"""
     base_url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
+
+    stock_status, qty_available, is_service = _get_stock_status(product)
 
     data = {
         'id': product.id,
@@ -185,7 +207,9 @@ def format_product(product, include_details=False):
             'name': product.categ_id.name,
         } if product.categ_id else None,
         'is_published': product.is_published,
-        'qty_available': product.qty_available if hasattr(product, 'qty_available') else 0,
+        'qty_available': qty_available,
+        'stock_status': stock_status,
+        'is_service': is_service,
     }
 
     # Add seller info for marketplace products

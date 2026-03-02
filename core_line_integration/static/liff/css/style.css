@@ -475,6 +475,60 @@ body {
     opacity: 0.7;
 }
 
+/* Stock badge on product card */
+.stock-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+.stock-badge.low-stock {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.stock-badge.out-of-stock {
+    background: #fce4ec;
+    color: #c62828;
+}
+
+.btn-card-cart:disabled,
+.btn-card-cart.disabled {
+    background: #ccc;
+    color: #888;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Stock warning in product detail modal */
+.pd-stock-info {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin: 8px 0;
+}
+
+.pd-stock-info.low-stock {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.pd-stock-info.out-of-stock {
+    background: #fce4ec;
+    color: #c62828;
+}
+
+/* Cart stock warning */
+.cart-stock-warning {
+    font-size: 0.7rem;
+    color: #e65100;
+    margin-top: 2px;
+}
+
 /* ================================================
    Product Detail (Modal)
    ================================================ */

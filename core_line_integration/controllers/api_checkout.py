@@ -10,7 +10,7 @@ from odoo.http import request
 
 from .main import (
     success_response, error_response, require_auth,
-    format_order, format_order_line
+    format_order, format_order_line, _get_stock_status
 )
 
 _logger = logging.getLogger(__name__)
@@ -177,6 +177,38 @@ class CheckoutApiController(http.Controller):
 
             if not cart or not cart.order_line:
                 return error_response('Cart is empty', 400, 'EMPTY_CART')
+
+            # Stock safety net: verify all items before confirming
+            stock_errors = []
+            for line in cart.order_line:
+                template = line.product_id.product_tmpl_id
+                if template.type == 'service':
+                    continue
+                available = template.qty_available if hasattr(template, 'qty_available') else 0
+                if available <= 0:
+                    stock_errors.append({
+                        'product': line.product_id.name,
+                        'error': 'สินค้าหมด',
+                        'available': 0,
+                        'requested': line.product_uom_qty,
+                    })
+                elif line.product_uom_qty > available:
+                    stock_errors.append({
+                        'product': line.product_id.name,
+                        'error': f'เหลือเพียง {int(available)} ชิ้น',
+                        'available': available,
+                        'requested': line.product_uom_qty,
+                    })
+            if stock_errors:
+                from .main import json_response
+                return json_response({
+                    'success': False,
+                    'error': {
+                        'message': 'สต๊อกสินค้าไม่เพียงพอ',
+                        'code': 'INSUFFICIENT_STOCK',
+                        'items': stock_errors,
+                    }
+                }, 400)
 
             # Update shipping address if provided
             shipping_address_id = data.get('shipping_address_id')

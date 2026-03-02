@@ -10,7 +10,8 @@ from odoo.http import request
 
 from .main import (
     success_response, error_response, require_auth,
-    format_order, format_order_line, get_product_image_url
+    format_order, format_order_line, get_product_image_url,
+    _get_stock_status
 )
 
 _logger = logging.getLogger(__name__)
@@ -62,17 +63,22 @@ class CartApiController(http.Controller):
         """Format cart for API response"""
         lines = []
         for line in cart.order_line:
+            template = line.product_id.product_tmpl_id
+            stock_status, qty_available, is_service = _get_stock_status(template)
             lines.append({
                 'id': line.id,
                 'product': {
                     'id': line.product_id.id,
                     'name': line.product_id.name,
-                    'image_url': get_product_image_url(line.product_id.product_tmpl_id),
+                    'image_url': get_product_image_url(template),
                     'price': line.product_id.lst_price,
                 },
                 'quantity': line.product_uom_qty,
                 'price_unit': line.price_unit,
                 'subtotal': line.price_subtotal,
+                'qty_available': qty_available,
+                'stock_status': stock_status,
+                'is_service': is_service,
             })
 
         return {
@@ -153,6 +159,17 @@ class CartApiController(http.Controller):
             if not product:
                 return error_response('No product variant available', 400)
 
+            # Stock validation for storable products
+            if template.type != 'service':
+                available = template.qty_available if hasattr(template, 'qty_available') else 0
+                if available <= 0:
+                    return error_response('สินค้าหมด', 400, 'OUT_OF_STOCK')
+                if quantity > available:
+                    return error_response(
+                        f'สต๊อกไม่เพียงพอ (เหลือ {int(available)} ชิ้น)',
+                        400, 'INSUFFICIENT_STOCK'
+                    )
+
             # Ensure partner exists
             if not request.line_partner:
                 request.line_partner = request.env['res.partner'].sudo().get_or_create_from_line(
@@ -178,8 +195,17 @@ class CartApiController(http.Controller):
             )
 
             if existing_line:
+                new_qty = existing_line.product_uom_qty + quantity
+                # Stock validation for updated total
+                if template.type != 'service':
+                    available = template.qty_available if hasattr(template, 'qty_available') else 0
+                    if new_qty > available:
+                        return error_response(
+                            f'สต๊อกไม่เพียงพอ (เหลือ {int(available)} ชิ้น, ในตะกร้า {int(existing_line.product_uom_qty)} ชิ้น)',
+                            400, 'INSUFFICIENT_STOCK'
+                        )
                 # Update quantity
-                existing_line.with_context(**ctx).product_uom_qty += quantity
+                existing_line.with_context(**ctx).product_uom_qty = new_qty
             else:
                 # Add new line
                 request.env['sale.order.line'].sudo().with_context(**ctx).create({
@@ -244,6 +270,15 @@ class CartApiController(http.Controller):
                 # Remove line
                 line.with_context(**ctx).unlink()
             else:
+                # Stock validation for storable products
+                template = line.product_id.product_tmpl_id
+                if template.type != 'service':
+                    available = template.qty_available if hasattr(template, 'qty_available') else 0
+                    if quantity > available:
+                        return error_response(
+                            f'สต๊อกไม่เพียงพอ (เหลือ {int(available)} ชิ้น)',
+                            400, 'INSUFFICIENT_STOCK'
+                        )
                 # Update quantity
                 line.with_context(**ctx).product_uom_qty = quantity
 

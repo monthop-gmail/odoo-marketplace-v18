@@ -385,6 +385,87 @@ class SellerProductsController(http.Controller):
             _logger.error(f'Error toggling product publish: {str(e)}')
             return error_response(str(e), 500)
 
+    # ==================== Restock ====================
+
+    @http.route('/api/line-seller/products/<int:product_id>/restock', type='http', auth='none',
+                methods=['POST', 'OPTIONS'], csrf=False)
+    @require_seller
+    def restock_product(self, product_id, **kwargs):
+        """
+        Restock a product: add inventory quantity via marketplace.stock.
+
+        JSON body:
+        - quantity: Amount to add (required, > 0)
+        """
+        if request.httprequest.method == 'OPTIONS':
+            return success_response()
+
+        try:
+            product = request.env['product.template'].sudo().browse(product_id)
+            if not product.exists():
+                return error_response('Product not found', 404, 'PRODUCT_NOT_FOUND')
+
+            if product.marketplace_seller_id.id != request.seller_partner.id:
+                return error_response('Unauthorized', 403, 'UNAUTHORIZED')
+
+            if product.status != 'approved':
+                return error_response(
+                    'Can only restock approved products',
+                    400, 'INVALID_STATE'
+                )
+
+            if product.type == 'service':
+                return error_response(
+                    'Service products do not have stock',
+                    400, 'SERVICE_PRODUCT'
+                )
+
+            body = json.loads(request.httprequest.data or '{}')
+            quantity = float(body.get('quantity', 0))
+
+            if quantity <= 0:
+                return error_response('Quantity must be greater than 0', 400, 'VALIDATION_ERROR')
+
+            # Get seller's stock location
+            seller = request.seller_partner
+            location_id = seller.get_seller_global_fields('location_id') if hasattr(seller, 'get_seller_global_fields') else False
+
+            if not location_id:
+                return error_response('Seller has no warehouse location configured', 400, 'NO_LOCATION')
+
+            # Get product variant
+            variant = product.product_variant_id
+            if not variant:
+                return error_response('No product variant available', 400, 'NO_VARIANT')
+
+            # Create marketplace.stock record
+            MpStock = request.env['marketplace.stock'].with_user(SUPERUSER_ID)
+            stock_record = MpStock.create({
+                'product_id': variant.id,
+                'product_temp_id': product.id,
+                'new_quantity': quantity,
+                'location_id': location_id,
+                'note': f'Restocked via LIFF ({int(quantity)} units)',
+                'state': 'requested',
+            })
+
+            # Auto-approve the stock request
+            stock_record.auto_approve()
+
+            # Reload product to get updated qty
+            product.invalidate_recordset(['qty_available'])
+
+            return success_response(
+                format_seller_product(product),
+                message=f'เติมสต๊อก {int(quantity)} ชิ้นสำเร็จ'
+            )
+
+        except json.JSONDecodeError:
+            return error_response('Invalid JSON body', 400, 'INVALID_JSON')
+        except Exception as e:
+            _logger.error(f'Error restocking product: {str(e)}')
+            return error_response(str(e), 500)
+
     # ==================== Product Images Gallery ====================
 
     def _get_seller_product(self, product_id):

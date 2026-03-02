@@ -78,7 +78,7 @@
             <field name="name">LINE Wishlist: user sees own records</field>
             <field name="model_id" ref="model_line_wishlist"/>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-            <field name="domain_force">[('member_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
             <field name="perm_create" eval="False"/>
@@ -90,7 +90,7 @@
             <field name="name">LINE Compare List: user sees own records</field>
             <field name="model_id" ref="model_line_compare_list"/>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-            <field name="domain_force">[('member_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
             <field name="perm_create" eval="False"/>
@@ -102,11 +102,23 @@
             <field name="name">LINE Compare Item: user sees own records</field>
             <field name="model_id" ref="model_line_compare_item"/>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-            <field name="domain_force">[('compare_list_id.member_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('compare_list_id.partner_id', '=', user.partner_id.id)]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
             <field name="perm_create" eval="False"/>
             <field name="perm_unlink" eval="False"/>
+        </record>
+
+        <!-- LINE LIFF: only channel managers can manage LIFF configs -->
+        <record id="line_liff_rule_manager" model="ir.rule">
+            <field name="name">LINE LIFF: Manager full access</field>
+            <field name="model_id" ref="model_line_liff"/>
+            <field name="groups" eval="[(4, ref('group_line_channel_manager'))]"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
         </record>
 
     </data>

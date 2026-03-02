@@ -9,7 +9,7 @@ from odoo.http import request
 
 from .main import (
     require_auth, success_response, error_response,
-    get_product_image_url
+    get_product_image_url, _get_stock_status
 )
 
 _logger = logging.getLogger(__name__)
@@ -80,6 +80,7 @@ def owner_only(func):
 
 def format_seller_product(product):
     """Format product for seller API response"""
+    stock_status, qty_available, is_service = _get_stock_status(product)
     return {
         'id': product.id,
         'name': product.name,
@@ -92,7 +93,9 @@ def format_seller_product(product):
             'id': product.categ_id.id,
             'name': product.categ_id.name,
         } if product.categ_id else None,
-        'qty_available': product.qty_available if hasattr(product, 'qty_available') else 0,
+        'qty_available': qty_available,
+        'stock_status': stock_status,
+        'is_service': is_service,
         'is_published': product.is_published if hasattr(product, 'is_published') else False,
         'create_date': product.create_date.isoformat() if product.create_date else None,
         'mp_qty': product.mp_qty,

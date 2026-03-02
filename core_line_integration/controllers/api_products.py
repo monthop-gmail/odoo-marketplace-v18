@@ -9,7 +9,7 @@ from odoo.http import request
 
 from .main import (
     success_response, error_response, require_auth,
-    format_product
+    format_product, _get_stock_status
 )
 
 _logger = logging.getLogger(__name__)
@@ -75,8 +75,15 @@ class ProductApiController(http.Controller):
             total = Product.search_count(domain)
             products = Product.search(domain, limit=limit, offset=offset, order=order)
 
+            # Filter out out-of-stock storable products (service products always show)
+            items = []
+            for p in products:
+                stock_status, _, is_service = _get_stock_status(p)
+                if is_service or stock_status != 'out_of_stock':
+                    items.append(format_product(p))
+
             return success_response({
-                'items': [format_product(p) for p in products],
+                'items': items,
                 'pagination': {
                     'page': page,
                     'limit': limit,

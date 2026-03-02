@@ -428,7 +428,27 @@ const SellerApp = {
             container.innerHTML = '<div class="text-center text-gray-400 py-8">No products found</div>';
             return;
         }
-        container.innerHTML = products.map(p => `
+        container.innerHTML = products.map(p => {
+            let stockBadge = '';
+            if (!p.is_service && p.status === 'approved') {
+                if (p.stock_status === 'out_of_stock') {
+                    stockBadge = '<span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">สินค้าหมด</span>';
+                } else if (p.stock_status === 'low_stock') {
+                    stockBadge = `<span class="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-700">เหลือ ${Math.floor(p.qty_available)}</span>`;
+                } else {
+                    stockBadge = `<span class="text-xs text-gray-400">Stock: ${Math.floor(p.qty_available)}</span>`;
+                }
+            } else if (p.is_service) {
+                stockBadge = '<span class="text-xs text-gray-400">บริการ</span>';
+            } else {
+                stockBadge = `<span class="text-xs text-gray-400">Stock: ${Math.floor(p.qty_available)}</span>`;
+            }
+
+            const restockBtn = (!p.is_service && p.status === 'approved' && p.stock_status === 'out_of_stock')
+                ? `<button onclick="event.stopPropagation(); SellerApp.showRestockModal(${p.id}, '${this.escapeHtml(p.name)}')" class="ml-2 px-3 py-1 bg-orange-500 text-white text-xs rounded-lg font-semibold">เติมสต๊อก</button>`
+                : '';
+
+            return `
             <div class="bg-white rounded-xl p-4 shadow cursor-pointer" onclick="SellerApp.showEditProduct(${p.id})">
                 <div class="flex items-center space-x-3">
                     <img src="${p.image_url || Config.DEFAULT_PRODUCT_IMAGE}" class="w-16 h-16 rounded-lg object-cover">
@@ -437,13 +457,14 @@ const SellerApp = {
                         <p class="text-green-600 font-bold">฿${this.formatNumber(p.price)}</p>
                         <div class="flex items-center space-x-2 mt-1">
                             <span class="px-2 py-0.5 rounded-full text-xs ${this.getProductStatusClass(p.status)}">${this.escapeHtml(p.status_display)}</span>
-                            <span class="text-xs text-gray-400">Stock: ${p.qty_available}</span>
+                            ${stockBadge}
+                            ${restockBtn}
                         </div>
                     </div>
                     <i class="fas fa-chevron-right text-gray-300"></i>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     },
 
     async showAddProduct() {
@@ -501,6 +522,32 @@ const SellerApp = {
 
             if (submitBtn) {
                 submitBtn.classList.toggle('hidden', product.status !== 'draft' && product.status !== 'rejected');
+            }
+
+            // Show restock button for approved storable products
+            let restockArea = document.getElementById('product-restock-area');
+            if (!restockArea) {
+                restockArea = document.createElement('div');
+                restockArea.id = 'product-restock-area';
+                form.parentNode.insertBefore(restockArea, form.nextSibling);
+            }
+            if (product.status === 'approved' && !product.is_service) {
+                const stockClass = product.stock_status === 'out_of_stock' ? 'bg-red-100 text-red-700' : (product.stock_status === 'low_stock' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700');
+                const stockText = product.stock_status === 'out_of_stock' ? 'สินค้าหมด' : (product.stock_status === 'low_stock' ? `เหลือ ${Math.floor(product.qty_available)} ชิ้น` : `มีสินค้า ${Math.floor(product.qty_available)} ชิ้น`);
+                restockArea.innerHTML = `
+                    <div class="mt-3 p-3 rounded-xl border ${product.stock_status !== 'in_stock' ? 'border-orange-300 bg-orange-50' : 'border-gray-200'}">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-sm font-semibold">สต๊อกปัจจุบัน</span>
+                                <span class="ml-2 px-2 py-0.5 rounded-full text-xs ${stockClass}">${stockText}</span>
+                            </div>
+                            <button type="button" onclick="SellerApp.showRestockModal(${productId}, '${this.escapeHtml(product.name)}')" class="px-3 py-1.5 bg-orange-500 text-white text-sm rounded-lg font-semibold">เติมสต๊อก</button>
+                        </div>
+                    </div>`;
+                restockArea.classList.remove('hidden');
+            } else {
+                restockArea.innerHTML = '';
+                restockArea.classList.add('hidden');
             }
 
             modal.classList.remove('hidden');
@@ -666,6 +713,62 @@ const SellerApp = {
         } catch (error) {
             console.error('Submit error:', error);
             this.showToast(error.message || 'Failed to submit product', 'error');
+        }
+    },
+
+    // ==================== Restock ====================
+
+    showRestockModal(productId, productName) {
+        // Create modal dynamically if not exists
+        let modal = document.getElementById('restock-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'restock-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+                    <h3 class="text-lg font-bold mb-2" id="restock-title">เติมสต๊อก</h3>
+                    <p class="text-gray-500 text-sm mb-4" id="restock-product-name"></p>
+                    <input type="number" id="restock-qty" min="1" value="10" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-lg text-center focus:border-orange-500 focus:outline-none" placeholder="จำนวนที่ต้องการเติม">
+                    <div class="flex space-x-3 mt-4">
+                        <button onclick="SellerApp.closeModal('restock-modal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-xl text-gray-600">ยกเลิก</button>
+                        <button onclick="SellerApp.confirmRestock()" id="restock-confirm-btn" class="flex-1 px-4 py-2 bg-orange-500 text-white rounded-xl font-semibold">เติมสต๊อก</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        document.getElementById('restock-product-name').textContent = productName;
+        document.getElementById('restock-qty').value = 10;
+        modal.dataset.productId = productId;
+        modal.classList.remove('hidden');
+    },
+
+    async confirmRestock() {
+        const modal = document.getElementById('restock-modal');
+        const productId = parseInt(modal.dataset.productId);
+        const qty = parseFloat(document.getElementById('restock-qty').value);
+
+        if (!qty || qty <= 0) {
+            this.showToast('กรุณาใส่จำนวนที่ถูกต้อง', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('restock-confirm-btn');
+        btn.disabled = true;
+        btn.textContent = 'กำลังเติม...';
+
+        try {
+            const result = await SellerAPI.restockProduct(productId, qty);
+            this.showToast(`เติมสต๊อก ${Math.floor(qty)} ชิ้นสำเร็จ`, 'success');
+            this.closeModal('restock-modal');
+            this.loadProducts();
+        } catch (error) {
+            console.error('Restock error:', error);
+            this.showToast(error.message || 'เติมสต๊อกไม่สำเร็จ', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'เติมสต๊อก';
         }
     },
 
